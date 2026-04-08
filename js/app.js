@@ -8,6 +8,10 @@ import {
 import { DEFAULT_LANG, LANGUAGES, t, categoryLabel } from './i18n.js';
 import { googleMapsDirectionsUrl, appleMapsDirectionsUrl } from './map-links.js';
 
+/** Carto Voyager (OSM data) — credits in index.html (.map-attribution) */
+const CARTO_VOYAGER =
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+
 /** @type {string} */
 let currentLang = DEFAULT_LANG;
 
@@ -17,6 +21,8 @@ const categoryVisible = Object.fromEntries(POI_CATEGORY_ORDER.map((k) => [k, tru
 const els = {
   map: /** @type {HTMLElement} */ (document.getElementById('map')),
   search: /** @type {HTMLInputElement} */ (document.getElementById('searchInput')),
+  searchWrap: document.getElementById('searchWrap'),
+  searchResults: /** @type {HTMLUListElement} */ (document.getElementById('searchResults')),
   menuBtn: document.getElementById('menuBtn'),
   menuBackdrop: document.getElementById('menuBackdrop'),
   menuPanel: document.getElementById('menuPanel'),
@@ -74,10 +80,12 @@ function routeWaypoints(route) {
 function filterMatchesSearch(poi, q) {
   if (!q) return true;
   const cat = categoryLabel(currentLang, poi.category).toLowerCase();
+  const desc = (poi.description && String(poi.description).toLowerCase()) || '';
   return (
     poi.name.toLowerCase().includes(q) ||
     cat.includes(q) ||
-    poi.category.toLowerCase().includes(q)
+    poi.category.toLowerCase().includes(q) ||
+    desc.includes(q)
   );
 }
 
@@ -85,11 +93,11 @@ function isPoiVisible(poi) {
   return categoryVisible[poi.category] !== false;
 }
 
+/** Map pins: category toggles only (search does not hide markers). */
 function refreshMarkers() {
-  const q = els.search.value.trim().toLowerCase();
   markers.forEach((m, i) => {
     const poi = POIS[i];
-    const show = isPoiVisible(poi) && filterMatchesSearch(poi, q);
+    const show = isPoiVisible(poi);
     const el = m.getElement();
     if (el) el.style.display = show ? '' : 'none';
     if (show) m.addTo(map);
@@ -99,25 +107,117 @@ function refreshMarkers() {
 
 function buildPopupContent(poi) {
   const cat = categoryLabel(currentLang, poi.category);
+  const desc =
+    poi.description && String(poi.description).trim()
+      ? `<p class="poi-popup__description">${escapeHtml(poi.description.trim())}</p>`
+      : '';
   const note = poi.shortNote
     ? `<p class="poi-popup__note">${escapeHtml(poi.shortNote)}</p>`
     : '';
-  return `<div class="poi-popup__title">${escapeHtml(poi.name)}</div>
+  return `<div class="poi-popup__title">${escapeHtml(poi.name)}</div>${desc}
     <div class="poi-popup__meta"><strong>${escapeHtml(t(currentLang, 'poiPopupCategory'))}:</strong> ${escapeHtml(cat)}</div>${note}`;
 }
 
+function getSearchMatches(q) {
+  const norm = q.trim().toLowerCase();
+  if (!norm) return [];
+  return POIS.map((poi, index) => ({ poi, index })).filter(
+    ({ poi }) => isPoiVisible(poi) && filterMatchesSearch(poi, norm),
+  );
+}
+
+function hideSearchResults() {
+  els.searchResults.hidden = true;
+  els.searchResults.innerHTML = '';
+  els.search.setAttribute('aria-expanded', 'false');
+}
+
+function renderSearchResults() {
+  const q = els.search.value;
+  const matches = getSearchMatches(q);
+  els.searchResults.innerHTML = '';
+
+  if (!q.trim()) {
+    hideSearchResults();
+    return;
+  }
+
+  els.searchResults.hidden = false;
+  els.search.setAttribute('aria-expanded', 'true');
+
+  if (matches.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'search-results__empty';
+    li.setAttribute('role', 'presentation');
+    li.textContent = t(currentLang, 'searchNoResults');
+    els.searchResults.appendChild(li);
+    return;
+  }
+
+  matches.forEach(({ poi, index }) => {
+    const li = document.createElement('li');
+    li.setAttribute('role', 'none');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'search-results__item';
+    btn.setAttribute('role', 'option');
+    btn.dataset.poiIndex = String(index);
+    const name = document.createElement('span');
+    name.className = 'search-results__name';
+    name.textContent = poi.name;
+    const meta = document.createElement('span');
+    meta.className = 'search-results__meta';
+    meta.textContent = categoryLabel(currentLang, poi.category);
+    btn.appendChild(name);
+    btn.appendChild(meta);
+    btn.addEventListener('mousedown', (e) => e.preventDefault());
+    btn.addEventListener('click', () => {
+      focusPoiAtIndex(index);
+      hideSearchResults();
+      els.search.blur();
+    });
+    li.appendChild(btn);
+    els.searchResults.appendChild(li);
+  });
+}
+
+function focusPoiAtIndex(index) {
+  const poi = POIS[index];
+  const marker = markers[index];
+  if (!poi || !marker || !map) return;
+  map.flyTo([poi.lat, poi.lng], Math.max(map.getZoom(), 17), {
+    duration: 0.55,
+  });
+  marker.openPopup();
+}
+
+function onSearchInput() {
+  refreshMarkers();
+  renderSearchResults();
+}
+
 function initMap() {
-  // @ts-ignore — Leaflet global from script tag
-  map = L.map(els.map, {
-    zoomControl: true,
-    attributionControl: true,
-  }).setView([PIEVEDI_TECO_CENTER.lat, PIEVEDI_TECO_CENTER.lng], 17);
+  // @ts-ignore
+  const worldBounds = L.latLngBounds(
+    [PIEVEDI_TECO_CENTER.lat - 0.08, PIEVEDI_TECO_CENTER.lng - 0.08],
+    [PIEVEDI_TECO_CENTER.lat + 0.08, PIEVEDI_TECO_CENTER.lng + 0.08],
+  );
 
   // @ts-ignore
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  map = L.map(els.map, {
+    zoomControl: false,
+    attributionControl: false,
+    minZoom: 13,
+    maxZoom: 20,
+    maxBounds: worldBounds,
+    maxBoundsViscosity: 0.85,
+  }).setView([PIEVEDI_TECO_CENTER.lat, PIEVEDI_TECO_CENTER.lng], 17);
+
+  // @ts-ignore — {r} is '' or '@2x' on retina (built into Leaflet tile URL)
+  L.tileLayer(CARTO_VOYAGER, {
+    attribution: '',
+    subdomains: 'abcd',
+    maxZoom: 20,
   }).addTo(map);
 
   POIS.forEach((poi) => {
@@ -140,7 +240,7 @@ function initMap() {
   const bounds = L.latLngBounds(POIS.map((p) => [p.lat, p.lng]));
   if (bounds.isValid()) {
     // @ts-ignore
-    map.fitBounds(bounds, { padding: [52, 52], maxZoom: 17 });
+    map.fitBounds(bounds.pad(0.12), { padding: [52, 52], maxZoom: 17 });
   }
 
   refreshMarkers();
@@ -151,13 +251,17 @@ function setMenuOpen(open) {
   els.menuBackdrop.classList.toggle('is-open', open);
   els.menuPanel.classList.toggle('is-open', open);
   els.menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) hideSearchResults();
 }
 
 function setRoutesVisible(visible) {
   els.routesView.classList.toggle('is-visible', visible);
   els.routesView.setAttribute('aria-hidden', visible ? 'false' : 'true');
   els.fabFilter.style.visibility = visible ? 'hidden' : 'visible';
-  if (visible) setMenuOpen(false);
+  if (visible) {
+    setMenuOpen(false);
+    hideSearchResults();
+  }
 }
 
 function setSheetOpen(open) {
@@ -168,6 +272,7 @@ function setSheetOpen(open) {
   sheetDragOffset = 0;
   els.sheet.style.transform = '';
   els.sheet.classList.remove('is-dragging');
+  if (open) hideSearchResults();
 }
 
 let sheetDragOffset = 0;
@@ -258,6 +363,7 @@ function renderCategoryToggles() {
     input.addEventListener('change', () => {
       categoryVisible[key] = input.checked;
       refreshMarkers();
+      renderSearchResults();
     });
     const slider = document.createElement('span');
     slider.className = 'switch-slider';
@@ -300,6 +406,7 @@ function applyTranslations() {
   markers.forEach((m, i) => {
     m.setPopupContent(buildPopupContent(POIS[i]));
   });
+  renderSearchResults();
 }
 
 function renderRoutes() {
@@ -348,7 +455,22 @@ function bindUi() {
     setRoutesVisible(false);
   });
 
-  els.search.addEventListener('input', () => refreshMarkers());
+  els.search.addEventListener('input', onSearchInput);
+  els.search.addEventListener('focus', () => {
+    if (els.search.value.trim()) renderSearchResults();
+  });
+  els.search.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      hideSearchResults();
+      els.search.blur();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!els.searchWrap.contains(/** @type {Node} */ (e.target))) {
+      hideSearchResults();
+    }
+  });
 
   els.fabFilter.addEventListener('click', () => {
     setSheetOpen(true);

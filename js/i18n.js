@@ -12,6 +12,7 @@ const STRINGS = {
   en: {
     appTitle: 'Pieve di Teco',
     searchPlaceholder: 'Search places…',
+    searchNoResults: 'No matching places.',
     menuRoutes: 'Routes',
     menuPlaceholder2: 'Coming soon',
     menuPlaceholder3: 'Coming soon',

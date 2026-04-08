@@ -4,6 +4,7 @@
  * =============================================================================
  * All POIs and walking routes live here. Coordinates use WGS84 (lat, lng).
  * Optional `icon` on a POI overrides the category default (emoji in the pin).
+ * Optional `description` — short tagline under the name in the popup (omit if unused).
  * =============================================================================
  */
 
@@ -53,6 +54,7 @@ export const POIS = [
     icon: '🎭',
     lat: 44.046312,
     lng: 7.916937,
+    description: 'The best in the city.',
   },
   {
     id: 'poi-monumento-caduti',

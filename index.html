@@ -24,6 +24,11 @@
   </head>
   <body>
     <div id="map" role="application" aria-label="Map of Pieve di Teco"></div>
+    <p class="map-attribution" aria-label="Map data attribution">
+      <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">© OpenStreetMap</a>
+      ·
+      <a href="https://carto.com/attributions" rel="noopener noreferrer" target="_blank">© CARTO</a>
+    </p>
 
     <header class="top-shell" aria-label="Toolbar">
       <div class="top-pill">
@@ -37,7 +42,7 @@
         >
           ≡
         </button>
-        <div class="search-wrap">
+        <div class="search-wrap" id="searchWrap">
           <input
             type="search"
             class="search-input"
@@ -45,7 +50,11 @@
             autocomplete="off"
             enterkeyhint="search"
             aria-label="Search places"
+            aria-expanded="false"
+            aria-controls="searchResults"
+            aria-autocomplete="list"
           />
+          <ul class="search-results" id="searchResults" role="listbox" hidden aria-label="Search results"></ul>
         </div>
         <div class="top-slot-right" aria-hidden="true"></div>
       </div>
