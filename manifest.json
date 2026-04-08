@@ -1,0 +1,18 @@
+{
+  "name": "Pieve di Teco — Guide",
+  "short_name": "Pieve Guide",
+  "description": "Tour map and walking routes for Pieve di Teco, Liguria.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#f2f2f7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

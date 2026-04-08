@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5"
+    />
+    <meta name="theme-color" content="#f2f2f7" />
+    <meta name="description" content="Tour guide for Pieve di Teco, Liguria — map, places, and walking routes." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pieve di Teco" />
+    <title>Pieve di Teco — Guide</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/app-icon.svg" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <div id="map" role="application" aria-label="Map of Pieve di Teco"></div>
+
+    <header class="top-shell" aria-label="Toolbar">
+      <div class="top-pill">
+        <button
+          type="button"
+          class="icon-btn"
+          id="menuBtn"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="menuPanel"
+        >
+          ≡
+        </button>
+        <div class="search-wrap">
+          <input
+            type="search"
+            class="search-input"
+            id="searchInput"
+            autocomplete="off"
+            enterkeyhint="search"
+            aria-label="Search places"
+          />
+        </div>
+        <div class="top-slot-right" aria-hidden="true"></div>
+      </div>
+    </header>
+
+    <div class="menu-backdrop" id="menuBackdrop"></div>
+    <nav class="menu-panel" id="menuPanel" aria-label="Main menu">
+      <div class="menu-section">
+        <button type="button" class="menu-item" id="menuRoutes">
+          <span id="menuRoutesLabel">Routes</span>
+          <small>→</small>
+        </button>
+      </div>
+      <div class="menu-section">
+        <button type="button" class="menu-item" disabled>
+          <span id="menuPlaceholder2Label">Coming soon</span>
+        </button>
+      </div>
+      <div class="menu-section">
+        <button type="button" class="menu-item" disabled>
+          <span id="menuPlaceholder3Label">Coming soon</span>
+        </button>
+      </div>
+    </nav>
+
+    <section class="routes-view" id="routesView" aria-hidden="true">
+      <div class="routes-inner">
+        <div class="routes-header">
+          <button
+            type="button"
+            class="icon-btn routes-back"
+            id="routesBackBtn"
+            aria-label="Back to map"
+          >
+            ‹
+          </button>
+          <h1 class="routes-title" id="routesTitle">Walking routes</h1>
+        </div>
+        <div id="routesList"></div>
+      </div>
+    </section>
+
+    <button
+      type="button"
+      class="fab-filter"
+      id="fabFilter"
+      aria-label="Filters and language"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M4 5.5h16v1.8H4V5.5zm3 5.5h10v1.8H7V11zm2 5.5h6v1.8H9V16.5z"
+        />
+      </svg>
+    </button>
+
+    <div class="sheet-backdrop" id="sheetBackdrop" aria-hidden="true"></div>
+    <aside
+      class="bottom-sheet"
+      id="filterSheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sheetFilterTitle"
+    >
+      <div class="sheet-handle-wrap" id="sheetDragZone">
+        <div class="sheet-handle" aria-hidden="true"></div>
+      </div>
+      <div class="sheet-scroll">
+        <h2 class="sheet-heading" id="sheetFilterTitle">Map & language</h2>
+        <p class="sheet-sub" id="sheetCatHeading">Categories</p>
+        <div id="sheetCategoryList"></div>
+        <p class="sheet-sub" id="sheetLangHeading">Language</p>
+        <label class="visually-hidden" for="langSelect">Language</label>
+        <select class="lang-select" id="langSelect"></select>
+      </div>
+    </aside>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
