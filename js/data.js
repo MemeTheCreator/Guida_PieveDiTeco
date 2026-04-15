@@ -304,15 +304,6 @@ export const POIS = [
 
 export const ROUTES = [
   {
-    id: 'route-centro-storico-to-teatro',
-    name: 'Dal centro storico al Teatro Salvini',
-    description:
-      'Passaggio breve tra piazza del centro storico e il Teatro Salvini — comodo per provare l’export verso Mappe.',
-    walkingTimeMinutes: 3,
-    distanceKm: 0.2,
-    waypointPoiIds: ['poi-piazza-centro-storico', 'poi-teatro-salvini'],
-  },
-  {
     id: 'route-heritage-loop',
     name: 'Historic center heritage loop',
     description:
@@ -355,6 +346,36 @@ export const ROUTES = [
       'poi-banco-azzoaglio',
       'poi-tabaccheria-corrado',
       'poi-bus-centro',
+    ],
+  },
+  {
+    id: 'route-hill-panorama-circuit',
+    name: 'Hill and panorama circuit',
+    description:
+      'A scenic route mixing viewpoints, convent areas, and quieter streets around the historic center.',
+    walkingTimeMinutes: 37,
+    distanceKm: 2.8,
+    waypointPoiIds: [
+      'poi-piazza-centro-storico',
+      'poi-convento-agostiniani',
+      'poi-panorama-ponte',
+      'poi-carabinieri',
+      'poi-teatro-salvini',
+    ],
+  },
+  {
+    id: 'route-essentials-plus-food',
+    name: 'Essentials plus food stop',
+    description:
+      'A practical route for essentials with a comfortable local food stop before returning to central points.',
+    walkingTimeMinutes: 29,
+    distanceKm: 2.1,
+    waypointPoiIds: [
+      'poi-farmacia-ceppi',
+      'poi-tabaccheria-caprile',
+      'poi-bus-albenga',
+      'poi-roba-da-matti',
+      'poi-piazza-centro-storico',
     ],
   },
 ];

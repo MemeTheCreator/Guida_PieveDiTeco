@@ -27,9 +27,14 @@ const els = {
   menuBackdrop: document.getElementById('menuBackdrop'),
   menuPanel: document.getElementById('menuPanel'),
   menuRoutes: document.getElementById('menuRoutes'),
+  menuWeather: document.getElementById('menuWeather'),
   routesView: document.getElementById('routesView'),
   routesList: document.getElementById('routesList'),
   routesTitle: document.getElementById('routesTitle'),
+  weatherView: document.getElementById('weatherView'),
+  weatherBackBtn: document.getElementById('weatherBackBtn'),
+  weatherPageTitle: document.getElementById('weatherPageTitle'),
+  weatherChart: document.getElementById('weatherChart'),
   fabFilter: document.getElementById('fabFilter'),
   sheetBackdrop: document.getElementById('sheetBackdrop'),
   sheet: document.getElementById('filterSheet'),
@@ -45,6 +50,7 @@ const els = {
   weatherCurrent: document.getElementById('weatherCurrent'),
   weatherUpdated: document.getElementById('weatherUpdated'),
   weatherForecast: document.getElementById('weatherForecast'),
+  locationAlert: document.getElementById('locationAlert'),
   storyBackdrop: document.getElementById('storyBackdrop'),
   storyModal: document.getElementById('storyModal'),
   storyTitle: document.getElementById('storyTitle'),
@@ -57,15 +63,16 @@ let map = null;
 
 /** @type {any[]} */
 const markers = [];
-const uploadedPhotosByPoiId = new Map();
-const WEATHER_URL = `https://api.open-meteo.com/v1/forecast?latitude=${PIEVEDI_TECO_CENTER.lat}&longitude=${PIEVEDI_TECO_CENTER.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=4`;
+const WEATHER_URL = `https://api.open-meteo.com/v1/forecast?latitude=${PIEVEDI_TECO_CENTER.lat}&longitude=${PIEVEDI_TECO_CENTER.lng}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`;
 const STORY_COOKIE_NAME = 'pieve_story_seen';
+const PIEVE_NEAR_RADIUS_KM = 12;
 let weatherCache = null;
 let weatherLoadedAtMs = 0;
 const WEATHER_TTL_MS = 1000 * 60 * 15;
 let gpsEnabled = false;
 let gpsWatchId = null;
 let userLocationMarker = null;
+let locationAlertRequestId = 0;
 
 function escapeHtml(s) {
   const d = document.createElement('div');
@@ -132,9 +139,31 @@ function weatherDayLabel(index) {
 }
 
 function getPoiPhotos(poi) {
-  const local = uploadedPhotosByPoiId.get(poi.id) || [];
-  const fromAssets = Array.isArray(poi.photos) ? poi.photos : [];
-  return [...fromAssets, ...local];
+  return Array.isArray(poi.photos) ? poi.photos : [];
+}
+
+function kmBetween(aLat, aLng, bLat, bLng) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const aa =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * (2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa)));
+}
+
+async function reverseGeocodePlace(lat, lng) {
+  try {
+    const url =
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=10`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('Reverse geocode failed');
+    const data = await res.json();
+    const addr = data?.address || {};
+    return addr.city || addr.town || addr.village || addr.county || data?.display_name || 'Unknown place';
+  } catch {
+    return 'Unknown place';
+  }
 }
 
 function routeWaypoints(route) {
@@ -183,21 +212,16 @@ function buildPopupContent(poi) {
     ? `<p class="poi-popup__note">${escapeHtml(poi.shortNote)}</p>`
     : '';
   const photos = getPoiPhotos(poi);
-  const photosHtml = photos.length
-    ? photos
-        .map((src) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(poi.name)}" loading="lazy" />`)
-        .join('')
-    : `<p class="poi-popup__no-photos">${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}</p>`;
+  const photosHtml = photos
+    .map((src) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(poi.name)}" loading="lazy" />`)
+    .join('');
   const goHref = poiNavigatorUrl(poi);
   return `<div class="poi-popup" data-poi-id="${escapeHtml(poi.id)}">
     <div class="poi-popup__title">${escapeHtml(poi.name)}</div>${desc}
     <div class="poi-popup__meta"><strong>${escapeHtml(t(currentLang, 'poiPopupCategory'))}:</strong> ${escapeHtml(cat)}</div>${note}
     <div class="poi-popup__photo-header">${escapeHtml(t(currentLang, 'poiPopupPhotos'))}</div>
     <div class="poi-popup__photos">${photosHtml}</div>
-    <label class="poi-photo-drop" data-poi-drop="${escapeHtml(poi.id)}">
-      <input type="file" accept="image/*" multiple data-poi-file="${escapeHtml(poi.id)}" />
-      ${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}
-    </label>
+    ${photos.length ? '' : `<p class="poi-popup__no-photos">${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}</p>`}
     <a class="poi-go-btn" href="${escapeHtml(goHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t(currentLang, 'poiPopupGo'))}</a>
   </div>`;
 }
@@ -320,43 +344,6 @@ function initMap() {
     markers.push(marker);
   });
 
-  map.on('popupopen', (e) => {
-    const root = e.popup.getElement();
-    if (!root) return;
-    const poiId = root.querySelector('.poi-popup')?.getAttribute('data-poi-id');
-    const poi = poiById(poiId);
-    if (!poi) return;
-    const input = root.querySelector(`[data-poi-file="${poi.id}"]`);
-    const dropZone = root.querySelector(`[data-poi-drop="${poi.id}"]`);
-    if (!input || !dropZone) return;
-    const applyFiles = (files) => {
-      const entries = uploadedPhotosByPoiId.get(poi.id) || [];
-      Array.from(files).forEach((file) => {
-        if (file.type.startsWith('image/')) {
-          entries.push(URL.createObjectURL(file));
-        }
-      });
-      uploadedPhotosByPoiId.set(poi.id, entries);
-      const index = POIS.findIndex((p) => p.id === poi.id);
-      if (index >= 0) markers[index].setPopupContent(buildPopupContent(poi));
-      e.popup.update();
-      if (index >= 0) markers[index].openPopup();
-    };
-    input.addEventListener('change', () => {
-      if (input.files?.length) applyFiles(input.files);
-    });
-    dropZone.addEventListener('dragover', (event) => {
-      event.preventDefault();
-      dropZone.classList.add('is-dragover');
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('is-dragover'));
-    dropZone.addEventListener('drop', (event) => {
-      event.preventDefault();
-      dropZone.classList.remove('is-dragover');
-      if (event.dataTransfer?.files?.length) applyFiles(event.dataTransfer.files);
-    });
-  });
-
   // @ts-ignore
   const bounds = L.latLngBounds(POIS.map((p) => [p.lat, p.lng]));
   if (bounds.isValid()) {
@@ -372,6 +359,16 @@ function showStoryModal(open) {
   els.storyModal.classList.toggle('is-open', open);
   els.storyBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
   els.storyModal.setAttribute('aria-hidden', open ? 'false' : 'true');
+}
+
+function setLocationAlert(message) {
+  if (!message) {
+    els.locationAlert.hidden = true;
+    els.locationAlert.textContent = '';
+    return;
+  }
+  els.locationAlert.textContent = message;
+  els.locationAlert.hidden = false;
 }
 
 function storySeen() {
@@ -394,6 +391,7 @@ function setGpsEnabled(next) {
       map.removeLayer(userLocationMarker);
       userLocationMarker = null;
     }
+    setLocationAlert('');
     return;
   }
   if (!navigator.geolocation || !map) {
@@ -403,7 +401,7 @@ function setGpsEnabled(next) {
   }
   if (gpsWatchId !== null) return;
   gpsWatchId = navigator.geolocation.watchPosition(
-    (position) => {
+    async (position) => {
       const latLng = [position.coords.latitude, position.coords.longitude];
       if (!userLocationMarker) {
         // @ts-ignore
@@ -418,9 +416,25 @@ function setGpsEnabled(next) {
       } else {
         userLocationMarker.setLatLng(latLng);
       }
+
+      const distanceKm = kmBetween(
+        position.coords.latitude,
+        position.coords.longitude,
+        PIEVEDI_TECO_CENTER.lat,
+        PIEVEDI_TECO_CENTER.lng,
+      );
+      if (distanceKm <= PIEVE_NEAR_RADIUS_KM) {
+        setLocationAlert('');
+        return;
+      }
+      const requestId = ++locationAlertRequestId;
+      const place = await reverseGeocodePlace(position.coords.latitude, position.coords.longitude);
+      if (requestId !== locationAlertRequestId) return;
+      setLocationAlert(`${t(currentLang, 'notNearPievePrefix')} ${place}`);
     },
     () => {
       setGpsEnabled(false);
+      setLocationAlert('');
     },
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 },
   );
@@ -431,11 +445,13 @@ function renderWeather(data) {
     els.weatherCurrent.textContent = t(currentLang, 'weatherUnavailable');
     els.weatherUpdated.textContent = '';
     els.weatherForecast.innerHTML = '';
+    els.weatherChart.innerHTML = '';
     return;
   }
   const current = data.current;
   els.weatherCurrent.textContent =
     `${weatherCodeLabel(current.weather_code)} · ${Math.round(current.temperature_2m)}°C · ` +
+    `${t(currentLang, 'weatherFeelsLike')} ${Math.round(current.apparent_temperature)}°C · ` +
     `${t(currentLang, 'weatherWind')} ${Math.round(current.wind_speed_10m)} km/h · ` +
     `${t(currentLang, 'weatherHumidity')} ${Math.round(current.relative_humidity_2m)}%`;
   els.weatherUpdated.textContent = `${t(currentLang, 'weatherUpdatedPrefix')}: ${new Date().toLocaleTimeString()}`;
@@ -443,8 +459,23 @@ function renderWeather(data) {
   const max = data.daily.temperature_2m_max || [];
   const min = data.daily.temperature_2m_min || [];
   const codes = data.daily.weather_code || [];
+  const usedMax = max.slice(0, 7);
+  const usedMin = min.slice(0, 7);
+  const allTemps = [...usedMax, ...usedMin].filter((n) => Number.isFinite(n));
+  const tMin = Math.min(...allTemps);
+  const tMax = Math.max(...allTemps);
+  const span = Math.max(1, tMax - tMin);
+  const xFor = (i, total) => (i / Math.max(1, total - 1)) * 360;
+  const yFor = (temp) => 140 - ((temp - tMin) / span) * 120;
+  const maxPoints = usedMax.map((temp, i) => `${xFor(i, usedMax.length)},${yFor(temp)}`).join(' ');
+  const minPoints = usedMin.map((temp, i) => `${xFor(i, usedMin.length)},${yFor(temp)}`).join(' ');
+  els.weatherChart.innerHTML = `
+    <line x1="0" y1="140" x2="360" y2="140" stroke="rgba(0,0,0,0.15)" stroke-width="1"></line>
+    <polyline points="${maxPoints}" fill="none" stroke="#ff6b35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <polyline points="${minPoints}" fill="none" stroke="#0a84ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+  `;
   els.weatherForecast.innerHTML = times
-    .slice(0, 4)
+    .slice(0, 7)
     .map(
       (date, i) => `<article class="weather-day">
         <div class="weather-day__name">${escapeHtml(i < 2 ? weatherDayLabel(i) : new Date(date).toLocaleDateString(undefined, { weekday: 'short' }))}</div>
@@ -483,6 +514,18 @@ function setMenuOpen(open) {
 function setRoutesVisible(visible) {
   els.routesView.classList.toggle('is-visible', visible);
   els.routesView.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  if (visible) setWeatherVisible(false);
+  els.fabFilter.style.visibility = visible ? 'hidden' : 'visible';
+  if (visible) {
+    setMenuOpen(false);
+    hideSearchResults();
+  }
+}
+
+function setWeatherVisible(visible) {
+  els.weatherView.classList.toggle('is-visible', visible);
+  els.weatherView.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  if (visible) setRoutesVisible(false);
   els.fabFilter.style.visibility = visible ? 'hidden' : 'visible';
   if (visible) {
     setMenuOpen(false);
@@ -617,6 +660,8 @@ function applyTranslations() {
   els.search.placeholder = t(currentLang, 'searchPlaceholder');
   const menuRoutes = document.getElementById('menuRoutesLabel');
   if (menuRoutes) menuRoutes.textContent = t(currentLang, 'menuRoutes');
+  const menuWeather = document.getElementById('menuWeatherLabel');
+  if (menuWeather) menuWeather.textContent = t(currentLang, 'menuWeather');
   const ph2 = document.getElementById('menuPlaceholder2Label');
   if (ph2) ph2.textContent = t(currentLang, 'menuPlaceholder2');
   const ph3 = document.getElementById('menuPlaceholder3Label');
@@ -629,6 +674,7 @@ function applyTranslations() {
   els.sheetCatHeading.textContent = t(currentLang, 'filterCategories');
   els.sheetLangHeading.textContent = t(currentLang, 'filterLanguage');
   els.weatherTitle.textContent = t(currentLang, 'weatherTitle');
+  els.weatherPageTitle.textContent = t(currentLang, 'weatherPageTitle');
   els.storyTitle.textContent = t(currentLang, 'storyTitle');
   els.storyBody.textContent = t(currentLang, 'storyBody');
   els.storyCloseBtn.textContent = t(currentLang, 'storyButton');
@@ -681,11 +727,17 @@ function bindUi() {
 
   els.menuRoutes.addEventListener('click', () => {
     setRoutesVisible(true);
+  });
+  els.menuWeather.addEventListener('click', () => {
+    setWeatherVisible(true);
     loadWeather();
   });
 
   document.getElementById('routesBackBtn').addEventListener('click', () => {
     setRoutesVisible(false);
+  });
+  els.weatherBackBtn.addEventListener('click', () => {
+    setWeatherVisible(false);
   });
 
   els.search.addEventListener('input', onSearchInput);
@@ -722,6 +774,7 @@ function bindUi() {
 
   els.storyCloseBtn.addEventListener('click', () => {
     rememberStorySeen();
+    setGpsEnabled(true);
     showStoryModal(false);
   });
   els.storyBackdrop.addEventListener('click', () => {
@@ -736,7 +789,10 @@ function boot() {
   initMap();
   initSheetDrag();
   bindUi();
-  if (!storySeen()) showStoryModal(true);
+  if (!storySeen()) {
+    showStoryModal(true);
+    setGpsEnabled(true);
+  }
   loadWeather();
   registerServiceWorker();
 }

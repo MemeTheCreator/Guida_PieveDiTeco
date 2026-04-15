@@ -350,6 +350,18 @@ body {
   height: 40px;
 }
 
+.location-alert {
+  pointer-events: auto;
+  max-width: 720px;
+  margin: 8px auto 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  background: rgba(255, 99, 71, 0.92);
+  color: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
 /* -----------------------------------------------------------------------------
    Hamburger slide-down menu
    ----------------------------------------------------------------------------- */
@@ -459,6 +471,32 @@ body {
   transition: transform var(--duration) var(--spring);
   pointer-events: none;
   visibility: hidden;
+}
+
+.weather-view {
+  position: fixed;
+  inset: 0;
+  z-index: 905;
+  padding: calc(78px + var(--safe-top)) 18px calc(24px + var(--safe-bottom));
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(240, 248, 255, 0.97) 0%, rgba(224, 236, 248, 0.98) 100%);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  transform: translateY(100%);
+  transition: transform var(--duration) var(--spring);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.weather-view.is-visible {
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.weather-inner {
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .routes-view.is-visible {
@@ -842,6 +880,10 @@ body {
   margin-bottom: 14px;
 }
 
+.weather-card--full {
+  min-height: calc(100vh - 170px - var(--safe-top) - var(--safe-bottom));
+}
+
 .weather-card h2 {
   margin: 0 0 8px;
   font-size: 18px;
@@ -860,8 +902,22 @@ body {
 
 .weather-forecast {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+
+.weather-chart-wrap {
+  margin: 12px 0 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.weather-chart {
+  width: 100%;
+  height: 160px;
+  display: block;
 }
 
 .weather-day {
@@ -959,5 +1015,9 @@ body {
 @media (min-width: 768px) {
   .top-pill {
     max-width: 640px;
+  }
+
+  .weather-forecast {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
