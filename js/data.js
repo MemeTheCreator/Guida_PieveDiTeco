@@ -312,4 +312,49 @@ export const ROUTES = [
     distanceKm: 0.2,
     waypointPoiIds: ['poi-piazza-centro-storico', 'poi-teatro-salvini'],
   },
+  {
+    id: 'route-heritage-loop',
+    name: 'Historic center heritage loop',
+    description:
+      'A compact route through arcades, churches and symbolic points of the old village center.',
+    walkingTimeMinutes: 24,
+    distanceKm: 1.6,
+    waypointPoiIds: [
+      'poi-piazza-centro-storico',
+      'poi-portici-1400',
+      'poi-monumento-caduti',
+      'poi-chiesa-grande',
+      'poi-teatro-salvini',
+    ],
+  },
+  {
+    id: 'route-flavors-water',
+    name: 'Flavors and fountains walk',
+    description:
+      'A food-friendly route connecting bakeries, local stops, and fresh water points in town.',
+    walkingTimeMinutes: 31,
+    distanceKm: 2.2,
+    waypointPoiIds: [
+      'poi-forno-900',
+      'poi-panificio-ferrari',
+      'poi-fontana-portici',
+      'poi-fontana-scuola',
+      'poi-parchetto-picnic',
+    ],
+  },
+  {
+    id: 'route-services-essentials',
+    name: 'Services and essentials route',
+    description:
+      'Useful itinerary for visitors that want to quickly locate pharmacy, post office, bank and transport.',
+    walkingTimeMinutes: 20,
+    distanceKm: 1.3,
+    waypointPoiIds: [
+      'poi-farmacia-ceppi',
+      'poi-poste',
+      'poi-banco-azzoaglio',
+      'poi-tabaccheria-corrado',
+      'poi-bus-centro',
+    ],
+  },
 ];

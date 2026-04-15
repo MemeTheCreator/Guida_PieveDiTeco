@@ -39,6 +39,17 @@ const els = {
   sheetCatHeading: document.getElementById('sheetCatHeading'),
   sheetLangHeading: document.getElementById('sheetLangHeading'),
   langSelect: /** @type {HTMLSelectElement} */ (document.getElementById('langSelect')),
+  gpsToggle: /** @type {HTMLInputElement} */ (document.getElementById('gpsToggle')),
+  gpsToggleLabel: document.getElementById('gpsToggleLabel'),
+  weatherTitle: document.getElementById('weatherTitle'),
+  weatherCurrent: document.getElementById('weatherCurrent'),
+  weatherUpdated: document.getElementById('weatherUpdated'),
+  weatherForecast: document.getElementById('weatherForecast'),
+  storyBackdrop: document.getElementById('storyBackdrop'),
+  storyModal: document.getElementById('storyModal'),
+  storyTitle: document.getElementById('storyTitle'),
+  storyBody: document.getElementById('storyBody'),
+  storyCloseBtn: document.getElementById('storyCloseBtn'),
 };
 
 /** @type {any} */
@@ -46,6 +57,15 @@ let map = null;
 
 /** @type {any[]} */
 const markers = [];
+const uploadedPhotosByPoiId = new Map();
+const WEATHER_URL = `https://api.open-meteo.com/v1/forecast?latitude=${PIEVEDI_TECO_CENTER.lat}&longitude=${PIEVEDI_TECO_CENTER.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=4`;
+const STORY_COOKIE_NAME = 'pieve_story_seen';
+let weatherCache = null;
+let weatherLoadedAtMs = 0;
+const WEATHER_TTL_MS = 1000 * 60 * 15;
+let gpsEnabled = false;
+let gpsWatchId = null;
+let userLocationMarker = null;
 
 function escapeHtml(s) {
   const d = document.createElement('div');
@@ -67,6 +87,54 @@ function poiMarkerColor(poi) {
 
 function poiById(id) {
   return POIS.find((p) => p.id === id);
+}
+
+function isApplePlatform() {
+  const ua = navigator.userAgent || '';
+  const p = navigator.platform || '';
+  return /iPad|iPhone|iPod|Mac/i.test(ua) || /Mac/i.test(p);
+}
+
+function poiNavigatorUrl(poi) {
+  const waypoints = [{ lat: poi.lat, lng: poi.lng }];
+  return isApplePlatform() ? appleMapsDirectionsUrl(waypoints) : googleMapsDirectionsUrl(waypoints);
+}
+
+function weatherCodeLabel(code) {
+  const labels = {
+    0: 'Clear',
+    1: 'Mainly clear',
+    2: 'Partly cloudy',
+    3: 'Overcast',
+    45: 'Fog',
+    48: 'Rime fog',
+    51: 'Light drizzle',
+    53: 'Drizzle',
+    55: 'Heavy drizzle',
+    61: 'Light rain',
+    63: 'Rain',
+    65: 'Heavy rain',
+    71: 'Light snow',
+    73: 'Snow',
+    75: 'Heavy snow',
+    80: 'Rain showers',
+    81: 'Rain showers',
+    82: 'Strong showers',
+    95: 'Thunderstorm',
+  };
+  return labels[code] ?? 'Variable';
+}
+
+function weatherDayLabel(index) {
+  if (index === 0) return t(currentLang, 'weatherToday');
+  if (index === 1) return t(currentLang, 'weatherTomorrow');
+  return t(currentLang, 'weatherNextDays');
+}
+
+function getPoiPhotos(poi) {
+  const local = uploadedPhotosByPoiId.get(poi.id) || [];
+  const fromAssets = Array.isArray(poi.photos) ? poi.photos : [];
+  return [...fromAssets, ...local];
 }
 
 function routeWaypoints(route) {
@@ -114,8 +182,24 @@ function buildPopupContent(poi) {
   const note = poi.shortNote
     ? `<p class="poi-popup__note">${escapeHtml(poi.shortNote)}</p>`
     : '';
-  return `<div class="poi-popup__title">${escapeHtml(poi.name)}</div>${desc}
-    <div class="poi-popup__meta"><strong>${escapeHtml(t(currentLang, 'poiPopupCategory'))}:</strong> ${escapeHtml(cat)}</div>${note}`;
+  const photos = getPoiPhotos(poi);
+  const photosHtml = photos.length
+    ? photos
+        .map((src) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(poi.name)}" loading="lazy" />`)
+        .join('')
+    : `<p class="poi-popup__no-photos">${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}</p>`;
+  const goHref = poiNavigatorUrl(poi);
+  return `<div class="poi-popup" data-poi-id="${escapeHtml(poi.id)}">
+    <div class="poi-popup__title">${escapeHtml(poi.name)}</div>${desc}
+    <div class="poi-popup__meta"><strong>${escapeHtml(t(currentLang, 'poiPopupCategory'))}:</strong> ${escapeHtml(cat)}</div>${note}
+    <div class="poi-popup__photo-header">${escapeHtml(t(currentLang, 'poiPopupPhotos'))}</div>
+    <div class="poi-popup__photos">${photosHtml}</div>
+    <label class="poi-photo-drop" data-poi-drop="${escapeHtml(poi.id)}">
+      <input type="file" accept="image/*" multiple data-poi-file="${escapeHtml(poi.id)}" />
+      ${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}
+    </label>
+    <a class="poi-go-btn" href="${escapeHtml(goHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t(currentLang, 'poiPopupGo'))}</a>
+  </div>`;
 }
 
 function getSearchMatches(q) {
@@ -236,6 +320,43 @@ function initMap() {
     markers.push(marker);
   });
 
+  map.on('popupopen', (e) => {
+    const root = e.popup.getElement();
+    if (!root) return;
+    const poiId = root.querySelector('.poi-popup')?.getAttribute('data-poi-id');
+    const poi = poiById(poiId);
+    if (!poi) return;
+    const input = root.querySelector(`[data-poi-file="${poi.id}"]`);
+    const dropZone = root.querySelector(`[data-poi-drop="${poi.id}"]`);
+    if (!input || !dropZone) return;
+    const applyFiles = (files) => {
+      const entries = uploadedPhotosByPoiId.get(poi.id) || [];
+      Array.from(files).forEach((file) => {
+        if (file.type.startsWith('image/')) {
+          entries.push(URL.createObjectURL(file));
+        }
+      });
+      uploadedPhotosByPoiId.set(poi.id, entries);
+      const index = POIS.findIndex((p) => p.id === poi.id);
+      if (index >= 0) markers[index].setPopupContent(buildPopupContent(poi));
+      e.popup.update();
+      if (index >= 0) markers[index].openPopup();
+    };
+    input.addEventListener('change', () => {
+      if (input.files?.length) applyFiles(input.files);
+    });
+    dropZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropZone.classList.add('is-dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('is-dragover'));
+    dropZone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropZone.classList.remove('is-dragover');
+      if (event.dataTransfer?.files?.length) applyFiles(event.dataTransfer.files);
+    });
+  });
+
   // @ts-ignore
   const bounds = L.latLngBounds(POIS.map((p) => [p.lat, p.lng]));
   if (bounds.isValid()) {
@@ -244,6 +365,111 @@ function initMap() {
   }
 
   refreshMarkers();
+}
+
+function showStoryModal(open) {
+  els.storyBackdrop.classList.toggle('is-open', open);
+  els.storyModal.classList.toggle('is-open', open);
+  els.storyBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+  els.storyModal.setAttribute('aria-hidden', open ? 'false' : 'true');
+}
+
+function storySeen() {
+  return document.cookie.split(';').some((part) => part.trim().startsWith(`${STORY_COOKIE_NAME}=1`));
+}
+
+function rememberStorySeen() {
+  document.cookie = `${STORY_COOKIE_NAME}=1; max-age=31536000; path=/; SameSite=Lax`;
+}
+
+function setGpsEnabled(next) {
+  gpsEnabled = Boolean(next);
+  els.gpsToggle.checked = gpsEnabled;
+  if (!gpsEnabled) {
+    if (gpsWatchId !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(gpsWatchId);
+      gpsWatchId = null;
+    }
+    if (userLocationMarker && map) {
+      map.removeLayer(userLocationMarker);
+      userLocationMarker = null;
+    }
+    return;
+  }
+  if (!navigator.geolocation || !map) {
+    gpsEnabled = false;
+    els.gpsToggle.checked = false;
+    return;
+  }
+  if (gpsWatchId !== null) return;
+  gpsWatchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const latLng = [position.coords.latitude, position.coords.longitude];
+      if (!userLocationMarker) {
+        // @ts-ignore
+        userLocationMarker = L.circleMarker(latLng, {
+          radius: 9,
+          color: '#ffffff',
+          weight: 3,
+          fillColor: '#0a84ff',
+          fillOpacity: 1,
+          className: 'gps-blue-dot',
+        }).addTo(map);
+      } else {
+        userLocationMarker.setLatLng(latLng);
+      }
+    },
+    () => {
+      setGpsEnabled(false);
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 },
+  );
+}
+
+function renderWeather(data) {
+  if (!data?.current || !data?.daily) {
+    els.weatherCurrent.textContent = t(currentLang, 'weatherUnavailable');
+    els.weatherUpdated.textContent = '';
+    els.weatherForecast.innerHTML = '';
+    return;
+  }
+  const current = data.current;
+  els.weatherCurrent.textContent =
+    `${weatherCodeLabel(current.weather_code)} · ${Math.round(current.temperature_2m)}°C · ` +
+    `${t(currentLang, 'weatherWind')} ${Math.round(current.wind_speed_10m)} km/h · ` +
+    `${t(currentLang, 'weatherHumidity')} ${Math.round(current.relative_humidity_2m)}%`;
+  els.weatherUpdated.textContent = `${t(currentLang, 'weatherUpdatedPrefix')}: ${new Date().toLocaleTimeString()}`;
+  const times = data.daily.time || [];
+  const max = data.daily.temperature_2m_max || [];
+  const min = data.daily.temperature_2m_min || [];
+  const codes = data.daily.weather_code || [];
+  els.weatherForecast.innerHTML = times
+    .slice(0, 4)
+    .map(
+      (date, i) => `<article class="weather-day">
+        <div class="weather-day__name">${escapeHtml(i < 2 ? weatherDayLabel(i) : new Date(date).toLocaleDateString(undefined, { weekday: 'short' }))}</div>
+        <div class="weather-day__meta">${escapeHtml(weatherCodeLabel(codes[i]))}</div>
+        <div class="weather-day__temp">${Math.round(min[i])}° / ${Math.round(max[i])}°</div>
+      </article>`,
+    )
+    .join('');
+}
+
+async function loadWeather() {
+  if (weatherCache && Date.now() - weatherLoadedAtMs < WEATHER_TTL_MS) {
+    renderWeather(weatherCache);
+    return;
+  }
+  els.weatherCurrent.textContent = t(currentLang, 'weatherLoading');
+  try {
+    const response = await fetch(WEATHER_URL);
+    if (!response.ok) throw new Error(`Weather HTTP ${response.status}`);
+    weatherCache = await response.json();
+    weatherLoadedAtMs = Date.now();
+    renderWeather(weatherCache);
+  } catch {
+    renderWeather(null);
+  }
 }
 
 function setMenuOpen(open) {
@@ -399,10 +625,16 @@ function applyTranslations() {
   const backBtn = document.getElementById('routesBackBtn');
   if (backBtn) backBtn.setAttribute('aria-label', t(currentLang, 'routesBackAria'));
   els.sheetFilterTitle.textContent = t(currentLang, 'filterTitle');
+  els.gpsToggleLabel.textContent = t(currentLang, 'gpsToggle');
   els.sheetCatHeading.textContent = t(currentLang, 'filterCategories');
   els.sheetLangHeading.textContent = t(currentLang, 'filterLanguage');
+  els.weatherTitle.textContent = t(currentLang, 'weatherTitle');
+  els.storyTitle.textContent = t(currentLang, 'storyTitle');
+  els.storyBody.textContent = t(currentLang, 'storyBody');
+  els.storyCloseBtn.textContent = t(currentLang, 'storyButton');
   renderCategoryToggles();
   renderRoutes();
+  renderWeather(weatherCache);
   markers.forEach((m, i) => {
     m.setPopupContent(buildPopupContent(POIS[i]));
   });
@@ -449,6 +681,7 @@ function bindUi() {
 
   els.menuRoutes.addEventListener('click', () => {
     setRoutesVisible(true);
+    loadWeather();
   });
 
   document.getElementById('routesBackBtn').addEventListener('click', () => {
@@ -482,6 +715,19 @@ function bindUi() {
     applyTranslations();
     refreshMarkers();
   });
+
+  els.gpsToggle.addEventListener('change', () => {
+    setGpsEnabled(els.gpsToggle.checked);
+  });
+
+  els.storyCloseBtn.addEventListener('click', () => {
+    rememberStorySeen();
+    showStoryModal(false);
+  });
+  els.storyBackdrop.addEventListener('click', () => {
+    rememberStorySeen();
+    showStoryModal(false);
+  });
 }
 
 function boot() {
@@ -490,6 +736,8 @@ function boot() {
   initMap();
   initSheetDrag();
   bindUi();
+  if (!storySeen()) showStoryModal(true);
+  loadWeather();
   registerServiceWorker();
 }
 

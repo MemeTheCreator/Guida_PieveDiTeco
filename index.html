@@ -93,8 +93,31 @@
           </button>
           <h1 class="routes-title" id="routesTitle">Walking routes</h1>
         </div>
+        <section class="weather-card" id="weatherCard" aria-live="polite">
+          <h2 id="weatherTitle">Weather now</h2>
+          <p class="weather-current" id="weatherCurrent">Loading weather...</p>
+          <p class="weather-updated" id="weatherUpdated"></p>
+          <div class="weather-forecast" id="weatherForecast"></div>
+        </section>
         <div id="routesList"></div>
       </div>
+    </section>
+    <div class="story-backdrop" id="storyBackdrop" aria-hidden="true"></div>
+    <section
+      class="story-modal"
+      id="storyModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="storyTitle"
+      aria-hidden="true"
+    >
+      <h2 id="storyTitle">The story of Pieve di Teco</h2>
+      <p id="storyBody">
+        Pieve di Teco has been a crossroads village of the Arroscia valley for centuries, shaped by merchants,
+        pilgrims, and the long arcades that still define its streets today. This guide helps you walk the same
+        paths, discover hidden corners, and enjoy local places with everything in one map.
+      </p>
+      <button type="button" class="story-close" id="storyCloseBtn">Start exploring</button>
     </section>
 
     <button
@@ -106,7 +129,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
         <path
           fill="currentColor"
-          d="M4 5.5h16v1.8H4V5.5zm3 5.5h10v1.8H7V11zm2 5.5h6v1.8H9V16.5z"
+          d="M19.14,12.94a7.43,7.43,0,0,0,.05-.94,7.43,7.43,0,0,0-.05-.94l2.11-1.65a.52.52,0,0,0,.12-.66l-2-3.46a.52.52,0,0,0-.62-.22l-2.49,1a7.4,7.4,0,0,0-1.62-.94l-.38-2.65A.5.5,0,0,0,13.76,2H10.24a.5.5,0,0,0-.49.41L9.37,5.06a7.4,7.4,0,0,0-1.62.94l-2.49-1a.52.52,0,0,0-.62.22l-2,3.46a.52.52,0,0,0,.12.66L4.86,11.06a7.43,7.43,0,0,0-.05.94,7.43,7.43,0,0,0,.05.94L2.75,14.59a.52.52,0,0,0-.12.66l2,3.46a.52.52,0,0,0,.62.22l2.49-1a7.4,7.4,0,0,0,1.62.94l.38,2.65a.5.5,0,0,0,.49.41h3.52a.5.5,0,0,0,.49-.41l.38-2.65a7.4,7.4,0,0,0,1.62-.94l2.49,1a.52.52,0,0,0,.62-.22l2-3.46a.52.52,0,0,0-.12-.66ZM12,15.5A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"
         />
       </svg>
     </button>
@@ -124,6 +147,15 @@
       </div>
       <div class="sheet-scroll">
         <h2 class="sheet-heading" id="sheetFilterTitle">Map & language</h2>
+        <label class="toggle-row gps-toggle-row" for="gpsToggle">
+          <span class="toggle-row-label">
+            <span class="toggle-row-label-text" id="gpsToggleLabel">Enable GPS location</span>
+          </span>
+          <span class="switch">
+            <input type="checkbox" id="gpsToggle" />
+            <span class="switch-slider"></span>
+          </span>
+        </label>
         <p class="sheet-sub" id="sheetCatHeading">Categories</p>
         <div id="sheetCategoryList"></div>
         <p class="sheet-sub" id="sheetLangHeading">Language</p>
