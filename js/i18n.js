@@ -51,7 +51,7 @@ const STRINGS = {
     poiPopupNextPhoto: 'Next photo',
     meetTeamTitle: 'Meet the team',
     meetTeamBody:
-      'Scopri le persone dietro questo progetto e il processo di esperienza sul campo. Il giorno 14 Aprile, appena finita la scuola, ci siamo diretti in macchina verso il paese di Pieve di Teco per realizzare un vero e proprio sopralluogo per vivere personalmente un viaggio nel luogo analizzato.',
+      'Discover the people behind this project and our real on-site exploration process. On April 14, right after school, we drove to Pieve di Teco to carry out a real field inspection and personally experience the journey through the area we studied.',
     meetTeamShowAllPhotos: 'Show all photos',
     galleryTitle: 'Photo gallery',
     galleryPoi: 'POI',
@@ -105,7 +105,7 @@ const STRINGS = {
     weatherWind: 'Vento',
     weatherHumidity: 'Umidità',
     storyTitle: 'La storia di Pieve di Teco',
-    storyBody: 'Scopri la storia completa nel tab Storia.',
+    storyBody: 'Scopri la storia completa nella sezione Storia.',
     storyButton: 'Aggiungi GPS',
     poiPopupPhotos: 'Foto',
     poiPopupDropPhotos: 'Le foto verranno aggiunte presto',
@@ -202,6 +202,100 @@ const STRINGS = {
   },
 };
 
+const POI_TEXT = {
+  en: {
+    'poi-teatro-salvini': { name: 'Teatro Salvini', description: 'Self-proclaimed smallest theatre in Europe: one of the town highlights.' },
+    'poi-monumento-caduti': { name: 'War Memorial', description: 'In memory of all those who died for their country.' },
+    'poi-portici-1400': { name: '1400s Arcades (via Mario Ponzoni)', description: 'The historical center of Pieve, rich in history and local shops.', shortNote: 'Indicative point along the arcades — approximate coordinates; refine on map if needed.' },
+    'poi-panorama-ponte': { name: 'Panoramic bridge viewpoint', description: 'A beautiful bridge with views of the Arroscia river and surrounding mountains.' },
+    'poi-convento-agostiniani': { name: 'Augustinian convent', description: 'A sacred place once home to monks devoted to Saint Augustine.' },
+    'poi-piazza-centro-storico': { name: 'Historic center square', description: 'Elegant square with flowers, monuments, and fountains.' },
+    'poi-panchina-gay-pride': { name: 'Gay Pride Bench', description: 'A symbol of inclusion in Valle Arroscia, rejecting all forms of discrimination.' },
+    'poi-chiesa-grande': { name: 'Main church', description: 'Main church used for Sunday functions in the central square.' },
+    'poi-chiesa-bella': { name: 'Art church', description: 'A church rich in artworks, including paintings and statues.' },
+    'poi-chiesa-900': { name: '900 church', description: 'Small church located at the end of the arcades.' },
+    'poi-convento': { name: 'Convent', description: 'Capuchin friars convent located at the end of the village.' },
+    'poi-forno-900': { name: 'Forno 900', description: 'Reference spot for traditional Ligurian baked products.' },
+    'poi-panificio-ferrari': { name: 'Ferrari Bakery', description: 'Main bakery, very popular thanks to its central roadside location.' },
+    'poi-pizzeria-maniscalco': { name: 'Maniscalco Pizzeria', description: 'Well-loved pizzeria with friendly staff.' },
+    'poi-roba-da-matti': { name: 'Roba da matti', description: 'Excellent pizzeria with seasonal, local ingredients.' },
+    'poi-parchetto-picnic': { name: 'Picnic park', description: 'Picnic area beside the river, with playground and bocce field.' },
+    'poi-farmacia-ceppi': { name: 'Ceppi Pharmacy', description: 'Open all year in scheduled hours, except on January 1st.' },
+    'poi-tabaccheria-corrado': { name: 'Corrado Tobacconist', description: 'More than tobacco: scratch cards and mobile top-ups.' },
+    'poi-tabaccheria-caprile': { name: 'Caprile Tobacconist', description: 'More than tobacco: scratch cards and mobile top-ups.' },
+    'poi-fontana-portici': { name: 'Fountain (arcades)', description: 'Drinking water fountain.' },
+    'poi-fontana-scuola': { name: 'Fountain (school)', description: 'Drinking water fountain.' },
+    'poi-fontana-piazza-angelo': { name: 'Fountain (Piazza Angelo)', description: 'Drinking water fountain.' },
+    'poi-vicolo-scarpa': { name: 'Fountain (Vicolo Scarpa)', description: 'Water fountain.' },
+    'poi-sferisterio': { name: 'Fountain (Sferisterio)', description: 'Drinking water fountain.' },
+    'poi-pic-nic': { name: 'Fountain (Picnic)', description: 'Drinking water fountain.' },
+    'poi-bus-centro': { name: 'Bus stop (center)' },
+    'poi-bus-albenga': { name: 'Bus stop (Albenga)' },
+    'poi-benzinaio-ip': { name: 'IP fuel station' },
+    'poi-benzinaio-esso': { name: 'Esso fuel station' },
+    'poi-carabinieri': { name: 'Carabinieri — Pieve di Teco station' },
+    'poi-croce-rossa': { name: 'Red Cross — Pieve di Teco committee', description: 'Immediate aid center for local citizens.' },
+    'poi-poste': { name: 'Italian Post Office' },
+    'poi-banco-azzoaglio': { name: 'P. Azzoaglio Credit Bank' },
+    'poi-banca-carige': { name: 'Carige Bank' },
+  },
+  it: {},
+  fr: {
+    'poi-teatro-salvini': { name: 'Teatro Salvini', description: "Autoproclamé plus petit théâtre d'Europe : un lieu emblématique de la ville." },
+    'poi-monumento-caduti': { name: 'Monument aux morts', description: 'En mémoire de tous ceux qui sont morts pour la patrie.' },
+    'poi-portici-1400': { name: 'Arcades du XIVe siècle (via Mario Ponzoni)', description: 'Le centre historique de Pieve, riche en histoire et en commerces.', shortNote: 'Point indicatif le long des arcades — coordonnées approximatives.' },
+    'poi-panorama-ponte': { name: 'Point panoramique (pont)', description: "Un beau pont avec vue sur l'Arroscia et les montagnes." },
+    'poi-convento-agostiniani': { name: 'Couvent augustinien', description: 'Lieu sacré autrefois habité par des moines dévoués à saint Augustin.' },
+    'poi-piazza-centro-storico': { name: 'Place du centre historique', description: 'Place élégante avec fleurs, monuments et fontaines.' },
+    'poi-panchina-gay-pride': { name: 'Banc Gay Pride', description: "Symbole d'inclusion dans la vallée Arroscia." },
+    'poi-chiesa-grande': { name: 'Grande église', description: 'Église principale utilisée pour les fonctions dominicales.' },
+    'poi-chiesa-bella': { name: "Église d'art", description: "Église riche en œuvres, peintures et statues." },
+    'poi-chiesa-900': { name: 'Église 900', description: 'Petite église au bout des arcades.' },
+    'poi-convento': { name: 'Couvent', description: 'Couvent de frères capucins situé au fond du village.' },
+  },
+};
+
+const ROUTE_TEXT = {
+  it: {
+    'route-heritage-loop': { name: 'Anello del centro storico', description: 'Percorso compatto tra portici, chiese e luoghi simbolici del borgo.' },
+    'route-flavors-water': { name: 'Sapori e fontane', description: 'Percorso tra forni, soste locali e fontanelle del paese.' },
+    'route-services-essentials': { name: 'Servizi essenziali', description: 'Itinerario utile per trovare farmacia, posta, banca e trasporti.' },
+    'route-hill-panorama-circuit': { name: 'Collina e panorami', description: 'Percorso panoramico tra punti vista, conventi e vie tranquille.' },
+    'route-essentials-plus-food': { name: 'Essenziali + pausa cibo', description: 'Percorso pratico con servizi e una sosta gastronomica.' },
+  },
+  fr: {
+    'route-heritage-loop': { name: 'Boucle du centre historique', description: 'Parcours compact entre arcades, églises et lieux symboliques du bourg.' },
+    'route-flavors-water': { name: 'Saveurs et fontaines', description: 'Itinéraire entre boulangeries locales et points d’eau.' },
+    'route-services-essentials': { name: 'Services essentiels', description: 'Parcours utile pour trouver pharmacie, poste, banque et transports.' },
+    'route-hill-panorama-circuit': { name: 'Circuit colline et panorama', description: 'Itinéraire panoramique entre points de vue, couvents et rues calmes.' },
+    'route-essentials-plus-food': { name: 'Essentiels et pause repas', description: 'Itinéraire pratique avec services et arrêt gourmand.' },
+  },
+};
+
+const STORY_PARAGRAPHS = {
+  en: [
+    'Introduction: Welcome to Pieve di Teco, twinned with the French town of Bagnols-en-Forêt. This Ligurian village in the province of Imperia stands in a strategic position near both Albenga and Imperia.',
+    'Origins: Under the feudal domain of the Marquises of Clavesana, a castle and fortification were built near Monte Teco to control trade and goods.',
+    'Genoese period: The current village was founded in 1233 and became a strategic captaincy area under the Republic of Genoa from 1386.',
+    'Conflicts and power shifts: Between the 15th and 18th centuries, the town went through wars, damage, and changing sovereignties.',
+    "From Napoleon to modernity: After the Congress of Vienna it joined the Kingdom of Sardinia, then Italy, and reached its modern territorial setup in the 20th century.",
+  ],
+  it: [
+    'Introduzione: Benvenuti nel sito di Pieve di Teco, gemellata con la città francese di Bagnols-en-Forêt.',
+    'Origini: Sotto il dominio feudale dei marchesi di Clavesana furono eretti castello e fortilizi presso il monte Teco.',
+    "Periodo genovese: L'attuale borgo nasce nel 1233 e dal 1386 entra stabilmente nell'orbita della Repubblica di Genova.",
+    'Conflitti e passaggi di potere: Tra XV e XVIII secolo il borgo attraversa guerre, danni e cambi di sovranità.',
+    "Dall'epoca napoleonica all'età contemporanea: dopo Vienna entra nel Regno di Sardegna e poi in Italia, fino all'assetto moderno.",
+  ],
+  fr: [
+    "Introduction : Bienvenue à Pieve di Teco, jumelée avec la ville française de Bagnols-en-Forêt.",
+    "Origines : Sous le domaine féodal des marquis de Clavesana, un château et des fortifications furent construits près du mont Teco.",
+    "Période génoise : Le bourg actuel naît en 1233 et entre durablement dans l'orbite de la République de Gênes dès 1386.",
+    'Conflits et changements de pouvoir : Du XVe au XVIIIe siècle, le bourg subit guerres, dommages et passages de souveraineté.',
+    "De l'époque napoléonienne à l'ère moderne : après Vienne, le territoire rejoint le Royaume de Sardaigne puis l'Italie.",
+  ],
+};
+
 export function t(lang, key) {
   const table = STRINGS[lang] || STRINGS[DEFAULT_LANG];
   return table[key] ?? STRINGS.en[key] ?? key;
@@ -211,4 +305,29 @@ export function categoryLabel(lang, categoryKey) {
   const table = STRINGS[lang] || STRINGS[DEFAULT_LANG];
   const labels = table.categoryLabels || {};
   return labels[categoryKey] ?? categoryKey;
+}
+
+export function poiText(lang, poi) {
+  const l = POI_TEXT[lang] || {};
+  const en = POI_TEXT.en || {};
+  const entry = l[poi.id] || {};
+  const entryEn = en[poi.id] || {};
+  return {
+    name: entry.name || entryEn.name || poi.name,
+    description: entry.description || entryEn.description || poi.description || '',
+    shortNote: entry.shortNote || entryEn.shortNote || poi.shortNote || '',
+  };
+}
+
+export function routeText(lang, route) {
+  const l = ROUTE_TEXT[lang] || {};
+  const entry = l[route.id] || {};
+  return {
+    name: entry.name || route.name,
+    description: entry.description || route.description,
+  };
+}
+
+export function storyParagraphs(lang) {
+  return STORY_PARAGRAPHS[lang] || STORY_PARAGRAPHS.en;
 }

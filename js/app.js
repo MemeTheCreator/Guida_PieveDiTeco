@@ -5,7 +5,7 @@ import {
   POI_CATEGORY_ORDER,
   CATEGORY_STYLES,
 } from './data.js';
-import { DEFAULT_LANG, LANGUAGES, t, categoryLabel } from './i18n.js';
+import { DEFAULT_LANG, LANGUAGES, t, categoryLabel, poiText, routeText, storyParagraphs } from './i18n.js';
 import { googleMapsDirectionsUrl, appleMapsDirectionsUrl } from './map-links.js';
 
 /** Carto Voyager (OSM data) — credits in index.html (.map-attribution) */
@@ -183,6 +183,10 @@ function getPoiPhotos(poi) {
   return Array.isArray(poi.photos) ? poi.photos : [];
 }
 
+function thumbPath(src) {
+  return src.startsWith('assets/') ? src.replace('assets/', 'assets/thumbs/') : src;
+}
+
 function kmBetween(aLat, aLng, bLat, bLng) {
   const toRad = (d) => (d * Math.PI) / 180;
   const dLat = toRad(bLat - aLat);
@@ -217,10 +221,11 @@ function routeWaypoints(route) {
 
 function filterMatchesSearch(poi, q) {
   if (!q) return true;
+  const localized = poiText(currentLang, poi);
   const cat = categoryLabel(currentLang, poi.category).toLowerCase();
-  const desc = (poi.description && String(poi.description).toLowerCase()) || '';
+  const desc = (localized.description && String(localized.description).toLowerCase()) || '';
   return (
-    poi.name.toLowerCase().includes(q) ||
+    localized.name.toLowerCase().includes(q) ||
     cat.includes(q) ||
     poi.category.toLowerCase().includes(q) ||
     desc.includes(q)
@@ -244,27 +249,29 @@ function refreshMarkers() {
 }
 
 function buildPopupContent(poi) {
+  const localized = poiText(currentLang, poi);
   const cat = categoryLabel(currentLang, poi.category);
   const desc =
-    poi.description && String(poi.description).trim()
-      ? `<p class="poi-popup__description">${escapeHtml(poi.description.trim())}</p>`
+    localized.description && String(localized.description).trim()
+      ? `<p class="poi-popup__description">${escapeHtml(localized.description.trim())}</p>`
       : '';
-  const note = poi.shortNote
-    ? `<p class="poi-popup__note">${escapeHtml(poi.shortNote)}</p>`
+  const note = localized.shortNote
+    ? `<p class="poi-popup__note">${escapeHtml(localized.shortNote)}</p>`
     : '';
   const photos = getPoiPhotos(poi);
+  const thumbPhotos = photos.map((src) => thumbPath(src));
   const photosHtml = photos.length
-    ? `<img src="${escapeHtml(photos[0])}" alt="${escapeHtml(poi.name)}" loading="lazy" data-carousel-image />
+    ? `<img src="${escapeHtml(thumbPhotos[0])}" alt="${escapeHtml(localized.name)}" loading="lazy" data-carousel-image />
        ${photos.length > 1 ? `<button type="button" class="poi-popup__carousel-btn prev" data-action="prev" aria-label="${escapeHtml(t(currentLang, 'poiPopupPrevPhoto'))}">‹</button>
        <button type="button" class="poi-popup__carousel-btn next" data-action="next" aria-label="${escapeHtml(t(currentLang, 'poiPopupNextPhoto'))}">›</button>
        <div class="poi-popup__carousel-dots" data-carousel-dots>1 / ${photos.length}</div>` : ''}`
     : '';
   const goHref = poiNavigatorUrl(poi);
   return `<div class="poi-popup" data-poi-id="${escapeHtml(poi.id)}">
-    <div class="poi-popup__title">${escapeHtml(poi.name)}</div>${desc}
+    <div class="poi-popup__title">${escapeHtml(localized.name)}</div>${desc}
     <div class="poi-popup__meta"><strong>${escapeHtml(t(currentLang, 'poiPopupCategory'))}:</strong> ${escapeHtml(cat)}</div>${note}
     <div class="poi-popup__photo-header">${escapeHtml(t(currentLang, 'poiPopupPhotos'))}</div>
-    <div class="poi-popup__photos" data-photo-index="0" data-photo-list="${escapeHtml(JSON.stringify(photos))}">${photosHtml}</div>
+    <div class="poi-popup__photos" data-photo-index="0" data-photo-list="${escapeHtml(JSON.stringify(thumbPhotos))}">${photosHtml}</div>
     ${photos.length ? '' : `<p class="poi-popup__no-photos">${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}</p>`}
     <a class="poi-go-btn" href="${escapeHtml(goHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t(currentLang, 'poiPopupGo'))}</a>
   </div>`;
@@ -316,7 +323,7 @@ function renderSearchResults() {
     btn.dataset.poiIndex = String(index);
     const name = document.createElement('span');
     name.className = 'search-results__name';
-    name.textContent = poi.name;
+    name.textContent = poiText(currentLang, poi).name;
     const meta = document.createElement('span');
     meta.className = 'search-results__meta';
     meta.textContent = categoryLabel(currentLang, poi.category);
@@ -759,6 +766,9 @@ function applyTranslations() {
   els.galleryStoryTitle.textContent = t(currentLang, 'galleryStory');
   els.galleryTeamTitle.textContent = t(currentLang, 'galleryMeetTeam');
   renderCategoryToggles();
+  renderMeetTeam();
+  renderStoryPage();
+  renderGallery();
   renderRoutes();
   renderWeather(weatherCache);
   markers.forEach((m, i) => {
@@ -768,14 +778,15 @@ function applyTranslations() {
 }
 
 function renderMeetTeam() {
-  els.meetTeamGrid.innerHTML = TEAM_PHOTOS.map((src) => `<img src="${escapeHtml(src)}" alt="Meet the team" loading="lazy" />`).join('');
+  els.meetTeamGrid.innerHTML = TEAM_PHOTOS.map((src) => `<img src="${escapeHtml(thumbPath(src))}" alt="Meet the team" loading="lazy" />`).join('');
 }
 
 function renderStoryPage() {
+  const paragraphs = storyParagraphs(currentLang);
   const blocks = [];
-  STORY_PARAGRAPHS.forEach((text, i) => {
+  paragraphs.forEach((text, i) => {
     blocks.push(`<p>${escapeHtml(text)}</p>`);
-    if (STORY_PHOTOS[i]) blocks.push(`<img src="${escapeHtml(STORY_PHOTOS[i])}" alt="Story photo" loading="lazy" />`);
+    if (STORY_PHOTOS[i]) blocks.push(`<img src="${escapeHtml(thumbPath(STORY_PHOTOS[i]))}" alt="Story photo" loading="lazy" />`);
   });
   els.storyArticle.innerHTML = blocks.join('');
 }
@@ -790,18 +801,19 @@ function renderGallery() {
 function renderRoutes() {
   els.routesList.innerHTML = '';
   ROUTES.forEach((route) => {
+    const localized = routeText(currentLang, route);
     const waypoints = routeWaypoints(route);
     const g = googleMapsDirectionsUrl(waypoints);
     const a = appleMapsDirectionsUrl(waypoints);
     const card = document.createElement('article');
     card.className = 'route-card';
     card.innerHTML = `
-      <h3>${escapeHtml(route.name)}</h3>
+      <h3>${escapeHtml(localized.name)}</h3>
       <div class="route-meta">
         <span>🚶 ${route.walkingTimeMinutes} ${t(currentLang, 'minutesShort')}</span>
         <span>📏 ${route.distanceKm} ${t(currentLang, 'kmShort')}</span>
       </div>
-      <p>${escapeHtml(route.description)}</p>
+      <p>${escapeHtml(localized.description)}</p>
       <div class="route-actions">
         <a href="${escapeHtml(g)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t(currentLang, 'routeExportGoogle'))}</a>
         <a href="${escapeHtml(a)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t(currentLang, 'routeExportApple'))}</a>
