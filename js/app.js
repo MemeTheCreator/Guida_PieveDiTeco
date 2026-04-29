@@ -28,13 +28,35 @@ const els = {
   menuPanel: document.getElementById('menuPanel'),
   menuRoutes: document.getElementById('menuRoutes'),
   menuWeather: document.getElementById('menuWeather'),
+  menuMeetTeam: document.getElementById('menuMeetTeam'),
+  menuStory: document.getElementById('menuStory'),
   routesView: document.getElementById('routesView'),
   routesList: document.getElementById('routesList'),
   routesTitle: document.getElementById('routesTitle'),
   weatherView: document.getElementById('weatherView'),
   weatherBackBtn: document.getElementById('weatherBackBtn'),
   weatherPageTitle: document.getElementById('weatherPageTitle'),
+  weatherPullHint: document.getElementById('weatherPullHint'),
   weatherChart: document.getElementById('weatherChart'),
+  meetTeamView: document.getElementById('meetTeamView'),
+  meetTeamBackBtn: document.getElementById('meetTeamBackBtn'),
+  meetTeamPageTitle: document.getElementById('meetTeamPageTitle'),
+  meetTeamBody: document.getElementById('meetTeamBody'),
+  meetTeamGrid: document.getElementById('meetTeamGrid'),
+  showAllPhotosBtn: document.getElementById('showAllPhotosBtn'),
+  storyView: document.getElementById('storyView'),
+  storyBackBtn: document.getElementById('storyBackBtn'),
+  storyPageTitle: document.getElementById('storyPageTitle'),
+  storyArticle: document.getElementById('storyArticle'),
+  galleryView: document.getElementById('galleryView'),
+  galleryBackBtn: document.getElementById('galleryBackBtn'),
+  galleryTitle: document.getElementById('galleryTitle'),
+  galleryPoiTitle: document.getElementById('galleryPoiTitle'),
+  galleryStoryTitle: document.getElementById('galleryStoryTitle'),
+  galleryTeamTitle: document.getElementById('galleryTeamTitle'),
+  galleryPoiGrid: document.getElementById('galleryPoiGrid'),
+  galleryStoryGrid: document.getElementById('galleryStoryGrid'),
+  galleryTeamGrid: document.getElementById('galleryTeamGrid'),
   fabFilter: document.getElementById('fabFilter'),
   sheetBackdrop: document.getElementById('sheetBackdrop'),
   sheet: document.getElementById('filterSheet'),
@@ -73,6 +95,25 @@ let gpsEnabled = false;
 let gpsWatchId = null;
 let userLocationMarker = null;
 let locationAlertRequestId = 0;
+const VIEW_CLOSE_MS = 420;
+const TEAM_PHOTOS = [
+  'assets/meet-the-team/meet-the-team-uso-web.jpeg',
+  'assets/meet-the-team/meet-the-team-berga-marco.jpg',
+];
+const STORY_PHOTOS = [
+  'assets/storia/storia-vista-paese.jpg',
+  'assets/storia/storia-piazza-castagne.jpg',
+  'assets/storia/storia-punto-panoramico.jpg',
+  'assets/storia/storia-punto-panoramico2.jpg',
+];
+const STORY_PARAGRAPHS = [
+  "Introduzione: Benvenuti nel sito di Pieve di Teco gemellata con la città Francese Bagnols-en-Forêt. Questa cittadina situata in Liguria, in provincia di Imperia si trova in un punto strategico, poiché è sia vicino alla città di Albenga sia a quella di Imperia.",
+  "Le Origini del paese: dominio feudale dei marchesi di Clavesana, che eressero presso il monte Teco un castello e un piccolo fortilizio per il controllo dei traffici.",
+  "Le Origini e il Dominio Genovese: l'attuale borgo di Pieve di Teco vide la nascita nel 1233 per volontà del marchese Antonio di Clavesana.",
+  'Tra il XIV e il XV secolo il borgo vede la costruzione delle principali strutture religiose e dal 1386 entra nell’orbita della Repubblica di Genova.',
+  "Secoli di conflitti e passaggi di potere: tra XV e XVIII secolo il borgo attraversa guerre, danni e cambi di sovranità, fino al periodo napoleonico.",
+  "Dall'Epoca Napoleonica all'Unità d'Italia e oltre: nel 1815 passa al Regno di Sardegna, dal 1861 al Regno d'Italia, e nel XX secolo raggiunge l'assetto territoriale definitivo.",
+];
 
 function escapeHtml(s) {
   const d = document.createElement('div');
@@ -113,8 +154,8 @@ function weatherCodeLabel(code) {
     1: 'Mainly clear',
     2: 'Partly cloudy',
     3: 'Overcast',
-    45: 'Fog',
-    48: 'Rime fog',
+    45: 'Fog 🌫️',
+    48: 'Rime fog 🌫️',
     51: 'Light drizzle',
     53: 'Drizzle',
     55: 'Heavy drizzle',
@@ -124,10 +165,10 @@ function weatherCodeLabel(code) {
     71: 'Light snow',
     73: 'Snow',
     75: 'Heavy snow',
-    80: 'Rain showers',
-    81: 'Rain showers',
-    82: 'Strong showers',
-    95: 'Thunderstorm',
+    80: 'Rain showers 🌦️',
+    81: 'Rain showers 🌦️',
+    82: 'Strong showers 🌧️',
+    95: 'Thunderstorm ⛈️',
   };
   return labels[code] ?? 'Variable';
 }
@@ -212,15 +253,18 @@ function buildPopupContent(poi) {
     ? `<p class="poi-popup__note">${escapeHtml(poi.shortNote)}</p>`
     : '';
   const photos = getPoiPhotos(poi);
-  const photosHtml = photos
-    .map((src) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(poi.name)}" loading="lazy" />`)
-    .join('');
+  const photosHtml = photos.length
+    ? `<img src="${escapeHtml(photos[0])}" alt="${escapeHtml(poi.name)}" loading="lazy" data-carousel-image />
+       ${photos.length > 1 ? `<button type="button" class="poi-popup__carousel-btn prev" data-action="prev" aria-label="${escapeHtml(t(currentLang, 'poiPopupPrevPhoto'))}">‹</button>
+       <button type="button" class="poi-popup__carousel-btn next" data-action="next" aria-label="${escapeHtml(t(currentLang, 'poiPopupNextPhoto'))}">›</button>
+       <div class="poi-popup__carousel-dots" data-carousel-dots>1 / ${photos.length}</div>` : ''}`
+    : '';
   const goHref = poiNavigatorUrl(poi);
   return `<div class="poi-popup" data-poi-id="${escapeHtml(poi.id)}">
     <div class="poi-popup__title">${escapeHtml(poi.name)}</div>${desc}
     <div class="poi-popup__meta"><strong>${escapeHtml(t(currentLang, 'poiPopupCategory'))}:</strong> ${escapeHtml(cat)}</div>${note}
     <div class="poi-popup__photo-header">${escapeHtml(t(currentLang, 'poiPopupPhotos'))}</div>
-    <div class="poi-popup__photos">${photosHtml}</div>
+    <div class="poi-popup__photos" data-photo-index="0" data-photo-list="${escapeHtml(JSON.stringify(photos))}">${photosHtml}</div>
     ${photos.length ? '' : `<p class="poi-popup__no-photos">${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}</p>`}
     <a class="poi-go-btn" href="${escapeHtml(goHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t(currentLang, 'poiPopupGo'))}</a>
   </div>`;
@@ -440,6 +484,24 @@ function setGpsEnabled(next) {
   );
 }
 
+function weatherDateLabel(date) {
+  return new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
+}
+
+function buildWeatherYAxis(min, max) {
+  const rows = [];
+  for (let i = 0; i <= 4; i += 1) {
+    const ratio = i / 4;
+    const y = 20 + ratio * 120;
+    const value = Math.round(max - (max - min) * ratio);
+    rows.push(
+      `<line x1="0" y1="${y}" x2="360" y2="${y}" stroke="rgba(0,0,0,0.08)" stroke-width="1"></line>
+       <text x="5" y="${y - 4}" class="weather-y-label">${value}°</text>`,
+    );
+  }
+  return rows.join('');
+}
+
 function renderWeather(data) {
   if (!data?.current || !data?.daily) {
     els.weatherCurrent.textContent = t(currentLang, 'weatherUnavailable');
@@ -470,24 +532,26 @@ function renderWeather(data) {
   const maxPoints = usedMax.map((temp, i) => `${xFor(i, usedMax.length)},${yFor(temp)}`).join(' ');
   const minPoints = usedMin.map((temp, i) => `${xFor(i, usedMin.length)},${yFor(temp)}`).join(' ');
   els.weatherChart.innerHTML = `
-    <line x1="0" y1="140" x2="360" y2="140" stroke="rgba(0,0,0,0.15)" stroke-width="1"></line>
+    ${buildWeatherYAxis(tMin, tMax)}
     <polyline points="${maxPoints}" fill="none" stroke="#ff6b35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
     <polyline points="${minPoints}" fill="none" stroke="#0a84ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
   `;
-  els.weatherForecast.innerHTML = times
+  const daysHtml = times
     .slice(0, 7)
     .map(
       (date, i) => `<article class="weather-day">
-        <div class="weather-day__name">${escapeHtml(i < 2 ? weatherDayLabel(i) : new Date(date).toLocaleDateString(undefined, { weekday: 'short' }))}</div>
+        <div class="weather-day__name">${escapeHtml(i < 2 ? weatherDayLabel(i) : new Date(date).toLocaleDateString(undefined, { weekday: 'long' }))}</div>
+        <div class="weather-day__date">${escapeHtml(weatherDateLabel(date))}</div>
         <div class="weather-day__meta">${escapeHtml(weatherCodeLabel(codes[i]))}</div>
         <div class="weather-day__temp">${Math.round(min[i])}° / ${Math.round(max[i])}°</div>
       </article>`,
     )
     .join('');
+  els.weatherForecast.innerHTML = `<div class="weather-legend"><span class="max">Max</span><span class="min">Min</span></div>${daysHtml}`;
 }
 
-async function loadWeather() {
-  if (weatherCache && Date.now() - weatherLoadedAtMs < WEATHER_TTL_MS) {
+async function loadWeather(force = false) {
+  if (!force && weatherCache && Date.now() - weatherLoadedAtMs < WEATHER_TTL_MS) {
     renderWeather(weatherCache);
     return;
   }
@@ -511,26 +575,33 @@ function setMenuOpen(open) {
   if (open) hideSearchResults();
 }
 
-function setRoutesVisible(visible) {
-  els.routesView.classList.toggle('is-visible', visible);
-  els.routesView.setAttribute('aria-hidden', visible ? 'false' : 'true');
-  if (visible) setWeatherVisible(false);
-  els.fabFilter.style.visibility = visible ? 'hidden' : 'visible';
-  if (visible) {
-    setMenuOpen(false);
-    hideSearchResults();
-  }
+function hideViewAnimated(view) {
+  if (!view.classList.contains('is-visible')) return;
+  view.classList.add('is-closing');
+  setTimeout(() => {
+    view.classList.remove('is-visible');
+    view.classList.remove('is-closing');
+    view.setAttribute('aria-hidden', 'true');
+  }, VIEW_CLOSE_MS);
 }
 
-function setWeatherVisible(visible) {
-  els.weatherView.classList.toggle('is-visible', visible);
-  els.weatherView.setAttribute('aria-hidden', visible ? 'false' : 'true');
-  if (visible) setRoutesVisible(false);
-  els.fabFilter.style.visibility = visible ? 'hidden' : 'visible';
-  if (visible) {
-    setMenuOpen(false);
-    hideSearchResults();
-  }
+function showView(view) {
+  [els.routesView, els.weatherView, els.meetTeamView, els.storyView, els.galleryView].forEach((v) => {
+    if (v !== view) hideViewAnimated(v);
+  });
+  view.classList.remove('is-closing');
+  view.classList.add('is-visible');
+  view.setAttribute('aria-hidden', 'false');
+  setMenuOpen(false);
+  hideSearchResults();
+  els.fabFilter.style.visibility = 'hidden';
+}
+
+function hideAllViews() {
+  [els.routesView, els.weatherView, els.meetTeamView, els.storyView, els.galleryView].forEach((v) =>
+    hideViewAnimated(v),
+  );
+  els.fabFilter.style.visibility = 'visible';
 }
 
 function setSheetOpen(open) {
@@ -662,10 +733,10 @@ function applyTranslations() {
   if (menuRoutes) menuRoutes.textContent = t(currentLang, 'menuRoutes');
   const menuWeather = document.getElementById('menuWeatherLabel');
   if (menuWeather) menuWeather.textContent = t(currentLang, 'menuWeather');
-  const ph2 = document.getElementById('menuPlaceholder2Label');
-  if (ph2) ph2.textContent = t(currentLang, 'menuPlaceholder2');
-  const ph3 = document.getElementById('menuPlaceholder3Label');
-  if (ph3) ph3.textContent = t(currentLang, 'menuPlaceholder3');
+  const menuMeet = document.getElementById('menuMeetTeamLabel');
+  if (menuMeet) menuMeet.textContent = t(currentLang, 'menuMeetTeam');
+  const menuStory = document.getElementById('menuStoryLabel');
+  if (menuStory) menuStory.textContent = t(currentLang, 'menuStory');
   els.routesTitle.textContent = t(currentLang, 'routesTitle');
   const backBtn = document.getElementById('routesBackBtn');
   if (backBtn) backBtn.setAttribute('aria-label', t(currentLang, 'routesBackAria'));
@@ -675,9 +746,18 @@ function applyTranslations() {
   els.sheetLangHeading.textContent = t(currentLang, 'filterLanguage');
   els.weatherTitle.textContent = t(currentLang, 'weatherTitle');
   els.weatherPageTitle.textContent = t(currentLang, 'weatherPageTitle');
+  els.weatherPullHint.textContent = t(currentLang, 'weatherPullHint');
   els.storyTitle.textContent = t(currentLang, 'storyTitle');
   els.storyBody.textContent = t(currentLang, 'storyBody');
   els.storyCloseBtn.textContent = t(currentLang, 'storyButton');
+  els.meetTeamPageTitle.textContent = t(currentLang, 'meetTeamTitle');
+  els.meetTeamBody.textContent = t(currentLang, 'meetTeamBody');
+  els.showAllPhotosBtn.textContent = t(currentLang, 'meetTeamShowAllPhotos');
+  els.storyPageTitle.textContent = t(currentLang, 'storyPageTitle');
+  els.galleryTitle.textContent = t(currentLang, 'galleryTitle');
+  els.galleryPoiTitle.textContent = t(currentLang, 'galleryPoi');
+  els.galleryStoryTitle.textContent = t(currentLang, 'galleryStory');
+  els.galleryTeamTitle.textContent = t(currentLang, 'galleryMeetTeam');
   renderCategoryToggles();
   renderRoutes();
   renderWeather(weatherCache);
@@ -685,6 +765,26 @@ function applyTranslations() {
     m.setPopupContent(buildPopupContent(POIS[i]));
   });
   renderSearchResults();
+}
+
+function renderMeetTeam() {
+  els.meetTeamGrid.innerHTML = TEAM_PHOTOS.map((src) => `<img src="${escapeHtml(src)}" alt="Meet the team" loading="lazy" />`).join('');
+}
+
+function renderStoryPage() {
+  const blocks = [];
+  STORY_PARAGRAPHS.forEach((text, i) => {
+    blocks.push(`<p>${escapeHtml(text)}</p>`);
+    if (STORY_PHOTOS[i]) blocks.push(`<img src="${escapeHtml(STORY_PHOTOS[i])}" alt="Story photo" loading="lazy" />`);
+  });
+  els.storyArticle.innerHTML = blocks.join('');
+}
+
+function renderGallery() {
+  const poiPhotos = POIS.flatMap((poi) => getPoiPhotos(poi));
+  els.galleryPoiGrid.innerHTML = poiPhotos.map((src) => `<img src="${escapeHtml(src)}" alt="POI photo" loading="lazy" />`).join('');
+  els.galleryStoryGrid.innerHTML = STORY_PHOTOS.map((src) => `<img src="${escapeHtml(src)}" alt="Story photo" loading="lazy" />`).join('');
+  els.galleryTeamGrid.innerHTML = TEAM_PHOTOS.map((src) => `<img src="${escapeHtml(src)}" alt="Team photo" loading="lazy" />`).join('');
 }
 
 function renderRoutes() {
@@ -726,19 +826,25 @@ function bindUi() {
   els.menuBackdrop.addEventListener('click', () => setMenuOpen(false));
 
   els.menuRoutes.addEventListener('click', () => {
-    setRoutesVisible(true);
+    showView(els.routesView);
   });
   els.menuWeather.addEventListener('click', () => {
-    setWeatherVisible(true);
+    showView(els.weatherView);
     loadWeather();
   });
+  els.menuMeetTeam.addEventListener('click', () => showView(els.meetTeamView));
+  els.menuStory.addEventListener('click', () => showView(els.storyView));
 
   document.getElementById('routesBackBtn').addEventListener('click', () => {
-    setRoutesVisible(false);
+    hideAllViews();
   });
   els.weatherBackBtn.addEventListener('click', () => {
-    setWeatherVisible(false);
+    hideAllViews();
   });
+  els.meetTeamBackBtn.addEventListener('click', hideAllViews);
+  els.storyBackBtn.addEventListener('click', hideAllViews);
+  els.galleryBackBtn.addEventListener('click', () => showView(els.meetTeamView));
+  els.showAllPhotosBtn.addEventListener('click', () => showView(els.galleryView));
 
   els.search.addEventListener('input', onSearchInput);
   els.search.addEventListener('focus', () => {
@@ -781,12 +887,63 @@ function bindUi() {
     rememberStorySeen();
     showStoryModal(false);
   });
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('.poi-popup__carousel-btn');
+    if (!btn) return;
+    const wrap = btn.closest('.poi-popup__photos');
+    const img = wrap?.querySelector('[data-carousel-image]');
+    if (!wrap || !img) return;
+    let list = [];
+    try {
+      list = JSON.parse(wrap.getAttribute('data-photo-list') || '[]');
+    } catch {
+      return;
+    }
+    if (!Array.isArray(list) || list.length < 2) return;
+    const currentIndex = Number(wrap.getAttribute('data-photo-index') || '0');
+    const nextIndex =
+      btn.getAttribute('data-action') === 'next'
+        ? (currentIndex + 1) % list.length
+        : (currentIndex - 1 + list.length) % list.length;
+    wrap.setAttribute('data-photo-index', String(nextIndex));
+    img.src = list[nextIndex];
+    const dots = wrap.querySelector('[data-carousel-dots]');
+    if (dots) dots.textContent = `${nextIndex + 1} / ${list.length}`;
+  });
+
+  let pullStartY = 0;
+  let canPull = false;
+  els.weatherView.addEventListener('touchstart', (e) => {
+    if (!els.weatherView.classList.contains('is-visible')) return;
+    canPull = els.weatherView.scrollTop <= 0;
+    pullStartY = e.touches[0].clientY;
+  });
+  els.weatherView.addEventListener('touchmove', (e) => {
+    if (!canPull) return;
+    const dy = e.touches[0].clientY - pullStartY;
+    if (dy > 70) els.weatherPullHint.textContent = t(currentLang, 'weatherReleaseHint');
+  });
+  els.weatherView.addEventListener('touchend', async (e) => {
+    if (!canPull) return;
+    canPull = false;
+    const dy = (e.changedTouches?.[0]?.clientY ?? pullStartY) - pullStartY;
+    els.weatherPullHint.textContent = t(currentLang, 'weatherPullHint');
+    if (dy > 70) {
+      els.weatherPullHint.textContent = t(currentLang, 'weatherRefreshing');
+      await loadWeather(true);
+      els.weatherPullHint.textContent = t(currentLang, 'weatherPullHint');
+    }
+  });
 }
 
 function boot() {
   fillLangSelect();
   applyTranslations();
   initMap();
+  renderMeetTeam();
+  renderStoryPage();
+  renderGallery();
   initSheetDrag();
   bindUi();
   if (!storySeen()) {

@@ -76,8 +76,15 @@
         </button>
       </div>
       <div class="menu-section">
-        <button type="button" class="menu-item" disabled>
-          <span id="menuPlaceholder3Label">Coming soon</span>
+        <button type="button" class="menu-item" id="menuMeetTeam">
+          <span id="menuMeetTeamLabel">Meet the team</span>
+          <small>→</small>
+        </button>
+      </div>
+      <div class="menu-section">
+        <button type="button" class="menu-item" id="menuStory">
+          <span id="menuStoryLabel">Story</span>
+          <small>→</small>
         </button>
       </div>
     </nav>
@@ -113,6 +120,7 @@
         </div>
         <section class="weather-card weather-card--full" id="weatherCard" aria-live="polite">
           <h2 id="weatherTitle">Current conditions</h2>
+          <p class="weather-pull-hint" id="weatherPullHint">Pull down to refresh</p>
           <p class="weather-current" id="weatherCurrent">Loading weather...</p>
           <p class="weather-updated" id="weatherUpdated"></p>
           <div class="weather-chart-wrap">
@@ -120,6 +128,50 @@
           </div>
           <div class="weather-forecast" id="weatherForecast"></div>
         </section>
+      </div>
+    </section>
+    <section class="routes-view" id="meetTeamView" aria-hidden="true">
+      <div class="routes-inner">
+        <div class="routes-header">
+          <button type="button" class="icon-btn routes-back" id="meetTeamBackBtn" aria-label="Back to map">‹</button>
+          <h1 class="routes-title" id="meetTeamPageTitle">Meet the team</h1>
+        </div>
+        <article class="route-card">
+          <p id="meetTeamBody"></p>
+          <div class="meet-team-grid" id="meetTeamGrid"></div>
+          <button type="button" class="gallery-open-btn" id="showAllPhotosBtn">Show all photos</button>
+        </article>
+      </div>
+    </section>
+    <section class="routes-view" id="storyView" aria-hidden="true">
+      <div class="routes-inner">
+        <div class="routes-header">
+          <button type="button" class="icon-btn routes-back" id="storyBackBtn" aria-label="Back to map">‹</button>
+          <h1 class="routes-title" id="storyPageTitle">Story</h1>
+        </div>
+        <article class="route-card story-article" id="storyArticle"></article>
+      </div>
+    </section>
+    <section class="weather-view" id="galleryView" aria-hidden="true">
+      <div class="weather-inner">
+        <div class="routes-header">
+          <button type="button" class="icon-btn routes-back" id="galleryBackBtn" aria-label="Back">‹</button>
+          <h1 class="routes-title" id="galleryTitle">Photo gallery</h1>
+        </div>
+        <div class="gallery-sections">
+          <section>
+            <h3 id="galleryPoiTitle">POI</h3>
+            <div class="gallery-grid" id="galleryPoiGrid"></div>
+          </section>
+          <section>
+            <h3 id="galleryStoryTitle">STORY</h3>
+            <div class="gallery-grid" id="galleryStoryGrid"></div>
+          </section>
+          <section>
+            <h3 id="galleryTeamTitle">MEET THE TEAM</h3>
+            <div class="gallery-grid" id="galleryTeamGrid"></div>
+          </section>
+        </div>
       </div>
     </section>
     <div class="story-backdrop" id="storyBackdrop" aria-hidden="true"></div>
