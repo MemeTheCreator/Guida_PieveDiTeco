@@ -70,4 +70,4 @@ Se vuoi contribuire:
 
 Tutte le immagini presenti in questo progetto sono state create da Danilo Girgenti. 
 
-Sebbene il codice sia rilasciato sotto licenza MIT, ho deciso di rinunciare a ogni diritto d'autore sulle immagini. Sono rilasciate sotto la licenza **CC0 1.0 Universal (Public Domain Dedication)**, il che significa che puoi copiarle, modificarle e distribuirle, anche per fini commerciali, senza dover chiedere permesso o fornire attribuzione (anche se gradita).
+Sia il codice sorgente che le immagini di questo progetto sono rilasciati sotto licenza MIT. Ciò significa che puoi copiare, modificare e distribuire l'intero pacchetto, anche per fini commerciali, a patto di includere l'avviso di copyright e il testo della licenza originale in ogni copia o parte sostanziale del codice.
