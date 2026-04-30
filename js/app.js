@@ -30,6 +30,7 @@ const els = {
   menuWeather: document.getElementById('menuWeather'),
   menuMeetTeam: document.getElementById('menuMeetTeam'),
   menuStory: document.getElementById('menuStory'),
+  menuList: document.getElementById('menuList'),
   routesView: document.getElementById('routesView'),
   routesList: document.getElementById('routesList'),
   routesTitle: document.getElementById('routesTitle'),
@@ -48,6 +49,10 @@ const els = {
   storyBackBtn: document.getElementById('storyBackBtn'),
   storyPageTitle: document.getElementById('storyPageTitle'),
   storyArticle: document.getElementById('storyArticle'),
+  listView: document.getElementById('listView'),
+  listBackBtn: document.getElementById('listBackBtn'),
+  listPageTitle: document.getElementById('listPageTitle'),
+  poiListView: document.getElementById('poiListView'),
   galleryView: document.getElementById('galleryView'),
   galleryBackBtn: document.getElementById('galleryBackBtn'),
   galleryTitle: document.getElementById('galleryTitle'),
@@ -267,12 +272,14 @@ function buildPopupContent(poi) {
        <div class="poi-popup__carousel-dots" data-carousel-dots>1 / ${photos.length}</div>` : ''}`
     : '';
   const goHref = poiNavigatorUrl(poi);
+  const photosSection = photos.length
+    ? `<div class="poi-popup__photo-header">${escapeHtml(t(currentLang, 'poiPopupPhotos'))}</div>
+    <div class="poi-popup__photos" data-photo-index="0" data-photo-list="${escapeHtml(JSON.stringify(thumbPhotos))}">${photosHtml}</div>`
+    : '';
   return `<div class="poi-popup" data-poi-id="${escapeHtml(poi.id)}">
     <div class="poi-popup__title">${escapeHtml(localized.name)}</div>${desc}
     <div class="poi-popup__meta"><strong>${escapeHtml(t(currentLang, 'poiPopupCategory'))}:</strong> ${escapeHtml(cat)}</div>${note}
-    <div class="poi-popup__photo-header">${escapeHtml(t(currentLang, 'poiPopupPhotos'))}</div>
-    <div class="poi-popup__photos" data-photo-index="0" data-photo-list="${escapeHtml(JSON.stringify(thumbPhotos))}">${photosHtml}</div>
-    ${photos.length ? '' : `<p class="poi-popup__no-photos">${escapeHtml(t(currentLang, 'poiPopupDropPhotos'))}</p>`}
+    ${photosSection}
     <a class="poi-go-btn" href="${escapeHtml(goHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t(currentLang, 'poiPopupGo'))}</a>
   </div>`;
 }
@@ -593,7 +600,7 @@ function hideViewAnimated(view) {
 }
 
 function showView(view) {
-  [els.routesView, els.weatherView, els.meetTeamView, els.storyView, els.galleryView].forEach((v) => {
+  [els.routesView, els.weatherView, els.meetTeamView, els.storyView, els.listView, els.galleryView].forEach((v) => {
     if (v !== view) hideViewAnimated(v);
   });
   view.classList.remove('is-closing');
@@ -605,7 +612,7 @@ function showView(view) {
 }
 
 function hideAllViews() {
-  [els.routesView, els.weatherView, els.meetTeamView, els.storyView, els.galleryView].forEach((v) =>
+  [els.routesView, els.weatherView, els.meetTeamView, els.storyView, els.listView, els.galleryView].forEach((v) =>
     hideViewAnimated(v),
   );
   els.fabFilter.style.visibility = 'visible';
@@ -744,6 +751,8 @@ function applyTranslations() {
   if (menuMeet) menuMeet.textContent = t(currentLang, 'menuMeetTeam');
   const menuStory = document.getElementById('menuStoryLabel');
   if (menuStory) menuStory.textContent = t(currentLang, 'menuStory');
+  const menuList = document.getElementById('menuListLabel');
+  if (menuList) menuList.textContent = t(currentLang, 'menuList');
   els.routesTitle.textContent = t(currentLang, 'routesTitle');
   const backBtn = document.getElementById('routesBackBtn');
   if (backBtn) backBtn.setAttribute('aria-label', t(currentLang, 'routesBackAria'));
@@ -761,6 +770,7 @@ function applyTranslations() {
   els.meetTeamBody.textContent = t(currentLang, 'meetTeamBody');
   els.showAllPhotosBtn.textContent = t(currentLang, 'meetTeamShowAllPhotos');
   els.storyPageTitle.textContent = t(currentLang, 'storyPageTitle');
+  els.listPageTitle.textContent = t(currentLang, 'listPageTitle');
   els.galleryTitle.textContent = t(currentLang, 'galleryTitle');
   els.galleryPoiTitle.textContent = t(currentLang, 'galleryPoi');
   els.galleryStoryTitle.textContent = t(currentLang, 'galleryStory');
@@ -769,6 +779,7 @@ function applyTranslations() {
   renderMeetTeam();
   renderStoryPage();
   renderGallery();
+  renderPoiList();
   renderRoutes();
   renderWeather(weatherCache);
   markers.forEach((m, i) => {
@@ -785,10 +796,53 @@ function renderStoryPage() {
   const paragraphs = storyParagraphs(currentLang);
   const blocks = [];
   paragraphs.forEach((text, i) => {
-    blocks.push(`<p>${escapeHtml(text)}</p>`);
+    const split = text.split(':');
+    if (split.length > 1) {
+      const heading = split.shift();
+      const body = split.join(':').trim();
+      blocks.push(`<h3>${escapeHtml(heading)}:</h3><p>${escapeHtml(body)}</p>`);
+    } else {
+      blocks.push(`<p>${escapeHtml(text)}</p>`);
+    }
     if (STORY_PHOTOS[i]) blocks.push(`<img src="${escapeHtml(thumbPath(STORY_PHOTOS[i]))}" alt="Story photo" loading="lazy" />`);
   });
   els.storyArticle.innerHTML = blocks.join('');
+}
+
+function renderPoiList() {
+  const grouped = Object.fromEntries(POI_CATEGORY_ORDER.map((k) => [k, []]));
+  POIS.forEach((poi) => {
+    if (grouped[poi.category]) grouped[poi.category].push(poi);
+  });
+  els.poiListView.innerHTML = POI_CATEGORY_ORDER.map((cat) => {
+    const items = grouped[cat] || [];
+    const category = categoryLabel(currentLang, cat);
+    const content = items.map((poi) => {
+      const localized = poiText(currentLang, poi);
+      const photos = getPoiPhotos(poi);
+      const photosHtml = photos.length
+        ? `<div class="poi-list-photos">${photos.map((src) => `<img src="${escapeHtml(thumbPath(src))}" alt="${escapeHtml(localized.name)}" loading="lazy" />`).join('')}</div>`
+        : '';
+      return `<article class="poi-list-item">
+        <button class="poi-list-toggle" type="button">${escapeHtml(localized.name)}</button>
+        <div class="poi-list-body" hidden>
+          ${localized.description ? `<p>${escapeHtml(localized.description)}</p>` : ''}
+          ${photosHtml}
+        </div>
+      </article>`;
+    }).join('');
+    return `<section class="list-category-card">
+      <h3 class="list-category-title">${escapeHtml(category)}</h3>
+      ${content}
+    </section>`;
+  }).join('');
+  els.poiListView.querySelectorAll('.poi-list-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const body = btn.nextElementSibling;
+      if (!body) return;
+      body.hidden = !body.hidden;
+    });
+  });
 }
 
 function renderGallery() {
@@ -846,6 +900,7 @@ function bindUi() {
   });
   els.menuMeetTeam.addEventListener('click', () => showView(els.meetTeamView));
   els.menuStory.addEventListener('click', () => showView(els.storyView));
+  els.menuList.addEventListener('click', () => showView(els.listView));
 
   document.getElementById('routesBackBtn').addEventListener('click', () => {
     hideAllViews();
@@ -855,6 +910,7 @@ function bindUi() {
   });
   els.meetTeamBackBtn.addEventListener('click', hideAllViews);
   els.storyBackBtn.addEventListener('click', hideAllViews);
+  els.listBackBtn.addEventListener('click', hideAllViews);
   els.galleryBackBtn.addEventListener('click', () => showView(els.meetTeamView));
   els.showAllPhotosBtn.addEventListener('click', () => showView(els.galleryView));
 

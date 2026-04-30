@@ -15,6 +15,7 @@ const STRINGS = {
     menuWeather: 'Weather',
     menuMeetTeam: 'Meet the team',
     menuStory: 'Story',
+    menuList: 'List',
     routesTitle: 'Walking routes',
     routesBackAria: 'Back to map',
     routeWalkTime: 'Walk',
@@ -58,6 +59,7 @@ const STRINGS = {
     galleryStory: 'STORY',
     galleryMeetTeam: 'MEET THE TEAM',
     storyPageTitle: 'Story',
+    listPageTitle: 'List',
     storyIntroTitle: 'Introduction',
     storyHistoryTitle: 'History',
     categoryLabels: {
@@ -80,6 +82,7 @@ const STRINGS = {
     menuWeather: 'Meteo',
     menuMeetTeam: 'Il team',
     menuStory: 'Storia',
+    menuList: 'Lista',
     routesTitle: 'Percorsi a piedi',
     routesBackAria: 'Torna alla mappa',
     routeWalkTime: 'Tempo a piedi',
@@ -122,6 +125,7 @@ const STRINGS = {
     galleryStory: 'STORIA',
     galleryMeetTeam: 'IL TEAM',
     storyPageTitle: 'Storia',
+    listPageTitle: 'Lista',
     storyIntroTitle: 'Introduzione',
     storyHistoryTitle: 'Storia',
     categoryLabels: {
@@ -144,6 +148,7 @@ const STRINGS = {
     menuWeather: 'Météo',
     menuMeetTeam: 'L’équipe',
     menuStory: 'Histoire',
+    menuList: 'Liste',
     routesTitle: 'Itinéraires à pied',
     routesBackAria: 'Retour à la carte',
     routeWalkTime: 'À pied',
@@ -186,6 +191,7 @@ const STRINGS = {
     galleryStory: 'HISTOIRE',
     galleryMeetTeam: "L'ÉQUIPE",
     storyPageTitle: 'Histoire',
+    listPageTitle: 'Liste',
     storyIntroTitle: 'Introduction',
     storyHistoryTitle: 'Histoire',
     categoryLabels: {

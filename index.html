@@ -82,6 +82,12 @@
         </button>
       </div>
       <div class="menu-section">
+        <button type="button" class="menu-item" id="menuList">
+          <span id="menuListLabel">List</span>
+          <small>→</small>
+        </button>
+      </div>
+      <div class="menu-section">
         <button type="button" class="menu-item" id="menuMeetTeam">
           <span id="menuMeetTeamLabel">Meet the team</span>
           <small>→</small>
@@ -150,6 +156,15 @@
           <h1 class="routes-title" id="storyPageTitle">Story</h1>
         </div>
         <article class="route-card story-article" id="storyArticle"></article>
+      </div>
+    </section>
+    <section class="routes-view" id="listView" aria-hidden="true">
+      <div class="routes-inner">
+        <div class="routes-header">
+          <button type="button" class="icon-btn routes-back" id="listBackBtn" aria-label="Back to map">‹</button>
+          <h1 class="routes-title" id="listPageTitle">List</h1>
+        </div>
+        <div id="poiListView"></div>
       </div>
     </section>
     <section class="weather-view" id="galleryView" aria-hidden="true">
