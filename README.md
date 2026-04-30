@@ -66,6 +66,8 @@ Se vuoi contribuire:
 
 ---
 
-## Licenza
+# Licenza e Proprietà delle Immagini
 
-Questo progetto è distribuito sotto licenza **MIT**.
+Tutte le immagini presenti in questo progetto sono state create da Danilo Girgenti. 
+
+Sebbene il codice sia rilasciato sotto licenza MIT, ho deciso di rinunciare a ogni diritto d'autore sulle immagini. Sono rilasciate sotto la licenza **CC0 1.0 Universal (Public Domain Dedication)**, il che significa che puoi copiarle, modificarle e distribuirle, anche per fini commerciali, senza dover chiedere permesso o fornire attribuzione (anche se gradita).
